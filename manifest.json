@@ -1,0 +1,25 @@
+{
+  "name": "Super Mobile Markdown Reader",
+  "short_name": "MD Reader",
+  "description": "A beautiful, offline-first Markdown reader and editor",
+  "start_url": "/index.html",
+  "display": "standalone",
+  "background_color": "#F9FBFD",
+  "theme_color": "#2563EB",
+  "orientation": "any",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "categories": ["productivity", "utilities"],
+  "file_handlers": [
+    {
+      "action": "/index.html",
+      "accept": {
+        "text/markdown": [".md", ".markdown"],
+        "text/plain": [".txt"]
+      }
+    }
+  ]
+}

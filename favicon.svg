@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512"><svg xmlns="http://www.w3.org/2000/svg" version="1.1" xmlns:xlink="http://www.w3.org/1999/xlink" width="512" height="512"><svg width="512" height="512" viewBox="0 0 512 512" xmlns="http://www.w3.org/2000/svg">
+  <rect width="512" height="512" fill="#2563EB"></rect>
+  
+  <linearGradient id="g" x1="0" x2="1" y1="0" y2="1">
+    <stop offset="0%" stop-color="white" stop-opacity="0.1"></stop>
+    <stop offset="100%" stop-color="black" stop-opacity="0.1"></stop>
+  </linearGradient>
+  <rect width="512" height="512" fill="url(#g)"></rect>
+
+  <path fill="white" d="M130 140 C130 120, 150 120, 160 140 L256 260 L352 140 C362 120, 382 120, 382 140 V360 C382 375, 370 385, 355 385 H325 C310 385, 300 375, 300 360 V240 L265 290 C260 295, 252 295, 247 290 L212 240 V360 C212 375, 202 385, 187 385 H157 C142 385, 130 375, 130 360 Z"></path>
+</svg></svg><style>@media (prefers-color-scheme: light) { :root { filter: none; } }
+@media (prefers-color-scheme: dark) { :root { filter: none; } }
+</style></svg>

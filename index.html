@@ -1,0 +1,1375 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
+<meta name="mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="apple-mobile-web-app-title" content="MD Reader"/>
+<meta name="theme-color" content="#2563EB"/>
+<meta name="description" content="A beautiful, offline-first Markdown reader and editor for iPhone and iPad."/>
+<title>Super Mobile Markdown Reader</title>
+<link rel="manifest" href="manifest.json"/>
+<link rel="apple-touch-icon" href="apple-touch-icon.png"/>
+
+<!-- Speyer UI System -->
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.1.2/sui-tokens.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.1.2/sui-components.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.1.2/sui.min.js"></script>
+
+<!-- Markdown + Sanitizer -->
+<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+
+<!-- Reading font -->
+<link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet"/>
+
+<style>
+/* ============================================================
+   ICON SYSTEM
+   ============================================================ */
+.icon {
+  width: 18px; height: 18px; flex-shrink: 0;
+  vertical-align: middle; display: inline-block;
+}
+.icon-sm { width: 14px; height: 14px; }
+.icon-lg { width: 24px; height: 24px; }
+.icon-xl { width: 56px; height: 56px; }
+/* Spin animation for loader icon */
+@keyframes spin { to { transform: rotate(360deg); } }
+.icon-spin { animation: spin 1.2s linear infinite; }
+
+/* ============================================================
+   APP OVERRIDES (on top of SUI)
+   ============================================================ */
+body {
+  overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
+  overscroll-behavior: none;
+}
+
+/* ============================================================
+   LIBRARY SCREEN
+   ============================================================ */
+.library-title-row {
+  display: flex; align-items: center; justify-content: space-between;
+  margin-bottom: var(--sui-space-3);
+}
+.library-title {
+  font-size: var(--sui-text-h1); font-weight: var(--sui-weight-bold);
+  letter-spacing: -0.02em;
+}
+.search-wrap { position: relative; }
+.search-wrap .icon {
+  position: absolute; left: 12px; top: 50%; transform: translateY(-50%);
+  color: var(--sui-text-muted); pointer-events: none;
+}
+.search-wrap .sui-input { padding-left: 40px; }
+
+.library-list {
+  padding: var(--sui-space-2) var(--sui-space-3);
+}
+
+/* Document card */
+.doc-card {
+  display: flex; gap: var(--sui-space-3); padding: var(--sui-space-3);
+  margin-bottom: var(--sui-space-2);
+  background: var(--sui-bg-card); border: 1px solid var(--sui-border);
+  border-radius: var(--sui-radius-lg); cursor: pointer;
+  transition: border-color var(--sui-duration-fast) var(--sui-easing),
+              box-shadow var(--sui-duration-fast) var(--sui-easing);
+  -webkit-user-select: none; user-select: none;
+}
+.doc-card:hover { border-color: var(--sui-blue-primary); box-shadow: var(--sui-shadow-sm); }
+.doc-card:active { transform: scale(0.99); }
+
+.doc-icon {
+  width: var(--sui-touch-target); height: var(--sui-touch-target);
+  border-radius: var(--sui-radius-sm); display: flex;
+  align-items: center; justify-content: center; flex-shrink: 0;
+  background: var(--sui-blue-soft); color: var(--sui-blue-primary);
+}
+.doc-icon.src-paste { background: var(--sui-success-soft); color: var(--sui-success); }
+.doc-icon.src-url { background: var(--sui-warning-soft); color: var(--sui-warning-strong); }
+
+.doc-info { flex: 1; min-width: 0; }
+.doc-title {
+  font-size: var(--sui-text-body); font-weight: var(--sui-weight-semibold);
+  margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.doc-preview {
+  font-size: var(--sui-text-small); color: var(--sui-text-muted); line-height: 1.4;
+  display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
+  overflow: hidden; margin-bottom: var(--sui-space-1);
+}
+/* Document metadata — uses sui-meta from SUI 2.1 */
+
+.doc-card-actions { display: flex; flex-direction: column; gap: var(--sui-space-1); flex-shrink: 0; }
+.doc-action-btn {
+  width: 32px; height: 32px; border-radius: var(--sui-radius-sm); border: none;
+  background: transparent; color: var(--sui-text-muted); display: flex;
+  align-items: center; justify-content: center; cursor: pointer;
+  transition: all var(--sui-duration-fast) var(--sui-easing);
+}
+.doc-action-btn:hover { background: var(--sui-bg-elevated); color: var(--sui-text-primary); }
+.doc-action-btn.fav-active { color: var(--sui-warning); }
+
+/* ============================================================
+   IMPORT DIALOG (native <dialog> + SUI)
+   ============================================================ */
+dialog.import-dialog { max-width: 480px; }
+dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) + env(safe-area-inset-bottom, 0)); }
+.import-option {
+  display: flex; align-items: center; gap: var(--sui-space-3);
+  padding: var(--sui-space-3); border: 1px solid var(--sui-border);
+  border-radius: var(--sui-radius-md); margin-bottom: var(--sui-space-2);
+  background: var(--sui-bg-card); width: 100%; text-align: left;
+  color: var(--sui-text-primary); cursor: pointer;
+  transition: all var(--sui-duration-fast) var(--sui-easing);
+  font-family: var(--sui-font-primary);
+}
+.import-option:hover { border-color: var(--sui-blue-primary); background: var(--sui-bg-elevated); }
+.import-option:active { transform: scale(0.98); }
+.import-option-icon {
+  width: 48px; height: 48px; border-radius: var(--sui-radius-md);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+.import-option-label { font-size: var(--sui-text-body); font-weight: var(--sui-weight-semibold); }
+.import-option-desc { font-size: var(--sui-text-meta); color: var(--sui-text-muted); margin-top: 2px; }
+.import-sub { display: none; }
+.import-sub.active { display: block; }
+.import-back-btn {
+  display: flex; align-items: center; gap: var(--sui-space-2);
+  background: none; border: none; color: var(--sui-blue-primary);
+  font-size: var(--sui-text-small); font-weight: var(--sui-weight-semibold);
+  margin-bottom: var(--sui-space-3); padding: 0; cursor: pointer;
+  font-family: var(--sui-font-primary);
+}
+
+/* ============================================================
+   READER SCREEN
+   ============================================================ */
+.reader-header {
+  padding: var(--sui-space-2) var(--sui-space-3);
+  padding-top: calc(var(--sui-space-2) + env(safe-area-inset-top, 0));
+  display: flex; align-items: center; gap: var(--sui-space-1); min-height: 52px;
+}
+.reader-title-bar { flex: 1; min-width: 0; text-align: center; }
+.reader-doc-title {
+  font-size: var(--sui-text-small); font-weight: var(--sui-weight-semibold);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.reader-body { scroll-behavior: smooth; }
+
+/* Reader content — sui-prose with user-controllable overrides */
+:root {
+  --reader-font-size: 18px;
+  --reader-line-height: 1.7;
+  --reader-max-width: 680px;
+  --reader-font-family: 'Newsreader', Georgia, serif;
+}
+#readerContent {
+  --sui-prose-font: var(--reader-font-family);
+  --sui-prose-size: var(--reader-font-size);
+  --sui-prose-leading: var(--reader-line-height);
+  --sui-prose-max-width: var(--reader-max-width);
+  --sui-prose-heading-font: var(--sui-font-primary);
+  margin: 0 auto; padding: var(--sui-space-4);
+}
+
+/* ============================================================
+   EDITOR MODE
+   ============================================================ */
+/* Editor bar */
+.editor-bar {
+  display: none; padding: var(--sui-space-2) var(--sui-space-3);
+  background: var(--sui-bg-card); border-bottom: 1px solid var(--sui-border);
+  gap: var(--sui-space-2); align-items: center;
+}
+.editor-bar.active { display: flex; }
+/* Editor toolbar — uses sui-toolbar from SUI 2.1 */
+.editor-toolbar { display: none; }
+.editor-toolbar.active { display: flex; }
+.find-bar {
+  display: none; padding: var(--sui-space-1) var(--sui-space-2);
+  background: var(--sui-bg-card); border-bottom: 1px solid var(--sui-border);
+  gap: var(--sui-space-1); align-items: center;
+}
+.find-bar.active { display: flex; }
+/* Find highlights — uses sui-mark / sui-mark-current from SUI 2.1 */
+.editor-container { display: none; flex: 1; flex-direction: column; overflow: hidden; }
+.editor-container.active { display: flex; }
+.editor-textarea {
+  flex: 1; width: 100%; border: none; outline: none; resize: none;
+  background: var(--sui-bg-primary); color: var(--sui-text-primary);
+  font-family: var(--sui-font-mono); font-size: var(--sui-text-small);
+  line-height: 1.6; padding: var(--sui-space-3) var(--sui-space-4);
+  -webkit-overflow-scrolling: touch;
+}
+
+/* ============================================================
+   TOC PANEL
+   ============================================================ */
+.toc-backdrop {
+  position: fixed; inset: 0; background: rgba(15,23,42,0.3);
+  z-index: var(--sui-z-modal); display: none;
+}
+.toc-backdrop.is-open { display: block; }
+.toc-panel {
+  position: fixed; top: 0; right: 0; width: 300px; max-width: 85vw;
+  height: 100%; background: var(--sui-bg-card); border-left: 1px solid var(--sui-border);
+  z-index: calc(var(--sui-z-modal) + 1); transform: translateX(100%);
+  transition: transform 0.25s var(--sui-easing); display: flex; flex-direction: column;
+}
+.toc-panel.is-open { transform: translateX(0); }
+.toc-header {
+  padding: var(--sui-space-3) var(--sui-space-4);
+  padding-top: calc(var(--sui-space-3) + env(safe-area-inset-top, 0));
+  border-bottom: 1px solid var(--sui-border);
+  display: flex; align-items: center; justify-content: space-between;
+}
+.toc-list { flex: 1; overflow-y: auto; padding: var(--sui-space-2); }
+.toc-item {
+  display: flex; align-items: center; width: 100%;
+  padding: var(--sui-space-2) var(--sui-space-3);
+  border: none; background: transparent;
+  border-radius: var(--sui-radius-sm); cursor: pointer;
+  transition: all var(--sui-duration-fast) var(--sui-easing);
+}
+.toc-item:hover { background: var(--sui-bg-elevated); }
+.toc-item-text {
+  flex: 1; text-align: left; color: var(--sui-text-secondary);
+  font-family: var(--sui-font-primary); font-size: var(--sui-text-small);
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.toc-item:hover .toc-item-text { color: var(--sui-text-primary); }
+.toc-edit-btn {
+  width: 28px; height: 28px; border: none; background: transparent;
+  color: var(--sui-text-muted); border-radius: var(--sui-radius-sm);
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer; opacity: 0; transition: opacity var(--sui-duration-fast) var(--sui-easing);
+  flex-shrink: 0;
+}
+.toc-item:hover .toc-edit-btn { opacity: 1; }
+.toc-edit-btn:hover { background: var(--sui-bg-elevated); color: var(--sui-blue-primary); }
+@media (hover: none) { .toc-edit-btn { opacity: 1; } }
+
+/* ============================================================
+   SETTINGS — uses sui-sheet from SUI
+   Custom: only .settings-row layout and .font-btn
+   ============================================================ */
+.settings-row {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: var(--sui-space-2) 0;
+}
+.settings-row:last-child { border-bottom: none; }
+.settings-label { font-size: var(--sui-text-small); font-weight: var(--sui-weight-semibold); }
+.font-size-controls { display: flex; align-items: center; gap: var(--sui-space-3); }
+.font-btn {
+  width: 40px; height: 40px; border-radius: var(--sui-radius-sm);
+  border: 1px solid var(--sui-border); background: var(--sui-bg-card);
+  color: var(--sui-text-primary); font-weight: var(--sui-weight-bold);
+  font-size: var(--sui-text-body); display: flex; align-items: center;
+  justify-content: center; cursor: pointer; font-family: var(--sui-font-primary);
+}
+.font-btn:hover { background: var(--sui-bg-elevated); }
+.font-size-val { font-size: var(--sui-text-small); font-weight: var(--sui-weight-semibold); min-width: 36px; text-align: center; }
+
+/* ============================================================
+   BACK TO TOP FAB
+   ============================================================ */
+.back-to-top {
+  position: fixed; bottom: calc(20px + env(safe-area-inset-bottom, 0)); right: 20px;
+  width: var(--sui-touch-target); height: var(--sui-touch-target);
+  border-radius: var(--sui-radius-full); background: var(--sui-blue-primary);
+  color: var(--sui-text-inverse); border: none; box-shadow: var(--sui-shadow-md);
+  display: flex; align-items: center; justify-content: center;
+  z-index: 20; opacity: 0; transform: scale(0.8);
+  transition: all 0.2s var(--sui-easing); pointer-events: none; cursor: pointer;
+}
+.back-to-top.visible { opacity: 1; transform: scale(1); pointer-events: auto; }
+
+/* ============================================================
+   OFFLINE BAR & FOOTER
+   ============================================================ */
+.offline-bar {
+  position: fixed; top: 0; left: 0; right: 0;
+  background: var(--sui-warning); color: #1a1a1a; text-align: center;
+  padding: 6px; font-size: var(--sui-text-meta); font-weight: var(--sui-weight-semibold);
+  z-index: calc(var(--sui-z-tooltip) + 1); transform: translateY(-100%);
+  transition: transform 0.3s var(--sui-easing);
+}
+.offline-bar.show { transform: translateY(0); }
+.app-footer {
+  text-align: center;
+  font-size: var(--sui-text-meta); color: var(--sui-text-muted);
+}
+
+/* ============================================================
+   PRINT
+   ============================================================ */
+@media print {
+  body { overflow: visible; background: #fff; }
+  .library-header, .reader-header, .toc-panel, .toc-backdrop, .sui-sheet,
+  .back-to-top, .offline-bar, dialog,
+  .app-footer, .editor-bar, .editor-toolbar, .find-bar, .editor-container, .sui-toast-container { display: none !important; }
+  .sui-screen { display: flex !important; height: auto !important; overflow: visible !important; }
+  .reader-body { overflow: visible !important; }
+  #readerContent { max-width: none; padding: 0; }
+  @page { margin: 1in; }
+}
+</style>
+</head>
+<body>
+
+<!-- ============================================================
+     SVG SPRITE SHEET (inline, zero HTTP requests)
+     ============================================================ -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none;">
+  <symbol id="i-chevron-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="15 18 9 12 15 6"/></symbol>
+  <symbol id="i-arrow-left" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="12" x2="5" y2="12"/><polyline points="12 19 5 12 12 5"/></symbol>
+  <symbol id="i-arrow-up" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="19" x2="12" y2="5"/><polyline points="5 12 12 5 19 12"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></symbol>
+  <symbol id="i-share" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 12v8a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-8"/><polyline points="16 6 12 2 8 6"/><line x1="12" y1="2" x2="12" y2="15"/></symbol>
+  <symbol id="i-trash" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/><line x1="10" y1="11" x2="10" y2="17"/><line x1="14" y1="11" x2="14" y2="17"/></symbol>
+  <symbol id="i-file-text" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/><polyline points="10 9 9 9 8 9"/></symbol>
+  <symbol id="i-clipboard" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M16 4h2a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2h2"/><rect x="8" y="2" width="8" height="4" rx="1" ry="1"/></symbol>
+  <symbol id="i-book-open" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></symbol>
+  <symbol id="i-pencil" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/><path d="m15 5 4 4"/></symbol>
+  <symbol id="i-type" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="4 7 4 4 20 4 20 7"/><line x1="9" y1="20" x2="15" y2="20"/><line x1="12" y1="4" x2="12" y2="20"/></symbol>
+  <symbol id="i-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/><line x1="3" y1="12" x2="3.01" y2="12"/><line x1="3" y1="18" x2="3.01" y2="18"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71"/><path d="M14 11a5 5 0 0 0-7.54-.54l-3 3a5 5 0 0 0 7.07 7.07l1.71-1.71"/></symbol>
+  <symbol id="i-star" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="i-star-filled" viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></symbol>
+  <symbol id="i-sun-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="m4.93 4.93 1.41 1.41"/><path d="m17.66 17.66 1.41 1.41"/><path d="M2 12h2"/><path d="M20 12h2"/><path d="m6.34 17.66-1.41 1.41"/><path d="m19.07 4.93-1.41 1.41"/></symbol>
+  <symbol id="i-info" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="16" x2="12" y2="12"/><line x1="12" y1="8" x2="12.01" y2="8"/></symbol>
+  <symbol id="i-check-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></symbol>
+  <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
+  <symbol id="i-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
+  <symbol id="i-loader" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></symbol>
+  <!-- Editor toolbar icons -->
+  <symbol id="i-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></symbol>
+  <symbol id="i-italic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></symbol>
+  <symbol id="i-heading" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4v16"/><path d="M18 4v16"/><path d="M6 12h12"/></symbol>
+  <symbol id="i-list-ordered" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="10" y1="6" x2="21" y2="6"/><line x1="10" y1="12" x2="21" y2="12"/><line x1="10" y1="18" x2="21" y2="18"/><path d="M4 6h1v4"/><path d="M4 10h2"/><path d="M6 18H4c0-1 2-2 2-3s-1-1.5-2-1"/></symbol>
+  <symbol id="i-quote" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 21c3 0 7-1 7-8V5c0-1.25-.756-2.017-2-2H4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2 1 0 1 0 1 1v1c0 1-1 2-2 2s-1 .008-1 1.031V21z"/><path d="M15 21c3 0 7-1 7-8V5c0-1.25-.757-2.017-2-2h-4c-1.25 0-2 .75-2 1.972V11c0 1.25.75 2 2 2h.75c0 2.25.25 4-2.75 4v3z"/></symbol>
+  <symbol id="i-code" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="16 18 22 12 16 6"/><polyline points="8 6 2 12 8 18"/></symbol>
+  <symbol id="i-minus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="5" y1="12" x2="19" y2="12"/></symbol>
+  <symbol id="i-image" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><circle cx="8.5" cy="8.5" r="1.5"/><polyline points="21 15 16 10 5 21"/></symbol>
+  <symbol id="i-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></symbol>
+  <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
+</svg>
+
+<!-- Offline indicator -->
+<div class="offline-bar" id="offlineBar">You're offline — your documents are still available</div>
+
+<!-- ============================================================
+     SCREEN 1: LIBRARY
+     ============================================================ -->
+<div class="sui-screen is-active" id="libraryScreen">
+  <div class="library-header sui-screen-header">
+    <div class="library-title-row">
+      <h1 class="library-title">Super MD Reader</h1>
+      <div class="sui-flex sui-gap-2">
+        <button class="sui-btn sui-btn-ghost sui-btn-sm" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
+          <svg class="icon"><use href="#i-sun-moon"/></svg>
+        </button>
+        <button class="sui-btn sui-btn-primary" id="importBtn" aria-label="Import document">
+          <svg class="icon"><use href="#i-plus"/></svg> Import
+        </button>
+      </div>
+    </div>
+    <div class="search-wrap" id="searchWrap">
+      <svg class="icon"><use href="#i-search"/></svg>
+      <input class="sui-input" type="search" id="librarySearch" placeholder="Search documents..." aria-label="Search documents"/>
+    </div>
+  </div>
+
+  <div id="tabBar" style="padding: var(--sui-space-2) var(--sui-space-3); background: var(--sui-bg-card); border-bottom: 1px solid var(--sui-border);">
+    <nav class="sui-nav" style="width:100%;">
+      <button class="sui-tab" aria-selected="true" data-tab="recent"><span class="sui-tab-label">Recent</span></button>
+      <button class="sui-tab" aria-selected="false" data-tab="favorites"><svg class="icon icon-sm"><use href="#i-star"/></svg><span class="sui-tab-label">Favorites</span></button>
+      <button class="sui-tab" aria-selected="false" data-tab="all"><span class="sui-tab-label">All</span></button>
+    </nav>
+  </div>
+
+  <div class="library-list sui-screen-body" id="libraryList"></div>
+
+  <div class="sui-empty" id="emptyState" style="display:none; flex:1;">
+    <div class="sui-empty-icon"><svg class="icon icon-xl"><use href="#i-book-open"/></svg></div>
+    <div class="sui-empty-title">No documents yet</div>
+    <p class="sui-empty-text">Import a Markdown file, paste text, or open from a URL to get started.</p>
+    <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
+  </div>
+
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️</div>
+</div>
+
+<!-- ============================================================
+     SCREEN 2: READER + EDITOR
+     ============================================================ -->
+<div class="sui-screen" id="readerScreen">
+  <div class="reader-header sui-screen-header">
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="readerBackBtn" aria-label="Back to library">
+      <svg class="icon"><use href="#i-chevron-left"/></svg>
+    </button>
+    <div class="reader-title-bar">
+      <div class="reader-doc-title" id="readerDocTitle">Document</div>
+      <div class="reader-meta" id="readerMeta" style="font-size:var(--sui-text-meta); color:var(--sui-text-muted); line-height:1;"></div>
+    </div>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="editToggleBtn" title="Edit document" aria-label="Toggle editor">
+      <svg class="icon"><use href="#i-pencil"/></svg>
+    </button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="findToggleBtn" title="Find in document" aria-label="Find in document">
+      <svg class="icon"><use href="#i-search"/></svg>
+    </button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="readerSettingsBtn" title="Reader settings" aria-label="Reader settings">
+      <svg class="icon"><use href="#i-type"/></svg>
+    </button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="tocBtn" title="Table of Contents" aria-label="Table of Contents">
+      <svg class="icon"><use href="#i-list"/></svg>
+    </button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="shareBtn" title="Share" aria-label="Share">
+      <svg class="icon"><use href="#i-share"/></svg>
+    </button>
+  </div>
+
+  <div class="editor-bar" id="editorBar">
+    <span class="sui-badge sui-badge-warning"><svg class="icon icon-sm"><use href="#i-pencil"/></svg> Editing</span>
+    <div style="flex:1;"></div>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="editorCancelBtn">Cancel</button>
+    <button class="sui-btn sui-btn-success sui-btn-sm" id="editorSaveBtn"><svg class="icon icon-sm"><use href="#i-check"/></svg> Save</button>
+  </div>
+
+  <div class="editor-toolbar sui-toolbar sui-toolbar-bordered" id="editorToolbar">
+    <button class="sui-toolbar-btn" data-fmt="bold" title="Bold (Cmd+B)" aria-label="Bold"><svg class="icon"><use href="#i-bold"/></svg></button>
+    <button class="sui-toolbar-btn" data-fmt="italic" title="Italic (Cmd+I)" aria-label="Italic"><svg class="icon"><use href="#i-italic"/></svg></button>
+    <button class="sui-toolbar-btn" data-fmt="heading" title="Heading" aria-label="Heading"><svg class="icon"><use href="#i-heading"/></svg></button>
+    <div class="sui-toolbar-sep"></div>
+    <button class="sui-toolbar-btn" data-fmt="link" title="Link" aria-label="Insert link"><svg class="icon"><use href="#i-link"/></svg></button>
+    <button class="sui-toolbar-btn" data-fmt="image" title="Image" aria-label="Insert image"><svg class="icon"><use href="#i-image"/></svg></button>
+    <div class="sui-toolbar-sep"></div>
+    <button class="sui-toolbar-btn" data-fmt="ul" title="Bullet list" aria-label="Bullet list"><svg class="icon"><use href="#i-list"/></svg></button>
+    <button class="sui-toolbar-btn" data-fmt="ol" title="Numbered list" aria-label="Numbered list"><svg class="icon"><use href="#i-list-ordered"/></svg></button>
+    <button class="sui-toolbar-btn" data-fmt="quote" title="Blockquote" aria-label="Blockquote"><svg class="icon"><use href="#i-quote"/></svg></button>
+    <div class="sui-toolbar-sep"></div>
+    <button class="sui-toolbar-btn" data-fmt="code" title="Code" aria-label="Code"><svg class="icon"><use href="#i-code"/></svg></button>
+    <button class="sui-toolbar-btn" data-fmt="hr" title="Horizontal rule" aria-label="Horizontal rule"><svg class="icon"><use href="#i-minus"/></svg></button>
+  </div>
+
+  <div class="find-bar" id="findBar">
+    <input class="sui-input" id="findInput" placeholder="Find..." style="flex:1; min-width:0; height:36px; font-size:var(--sui-text-small);" aria-label="Find text"/>
+    <span class="find-count" id="findCount" style="font-size:var(--sui-text-meta); color:var(--sui-text-muted); white-space:nowrap;"></span>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="findPrevBtn" title="Previous" aria-label="Previous match">↑</button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="findNextBtn" title="Next" aria-label="Next match">↓</button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="findCloseBtn" aria-label="Close find"><svg class="icon icon-sm"><use href="#i-x"/></svg></button>
+  </div>
+
+  <div class="reader-body sui-screen-body" id="readerBody">
+    <div class="sui-prose" id="readerContent"></div>
+  </div>
+
+  <div class="editor-container" id="editorContainer">
+    <textarea class="editor-textarea" id="editorTextarea" aria-label="Markdown editor"></textarea>
+  </div>
+
+  <button class="back-to-top" id="backToTopBtn" aria-label="Back to top">
+    <svg class="icon"><use href="#i-arrow-up"/></svg>
+  </button>
+</div>
+
+<!-- ============================================================
+     TOC PANEL
+     ============================================================ -->
+<div class="toc-backdrop" id="tocBackdrop"></div>
+<div class="toc-panel" id="tocPanel">
+  <div class="toc-header">
+    <h3 style="font-size:var(--sui-text-body); font-weight:var(--sui-weight-bold);">Contents</h3>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="tocCloseBtn" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="toc-list" id="tocList"></div>
+</div>
+
+<!-- ============================================================
+     READER SETTINGS (sui-sheet + sui-segmented)
+     ============================================================ -->
+<div class="sui-sheet" id="settingsSheet" aria-hidden="true">
+  <div class="sui-sheet-panel">
+    <div class="sui-sheet-handle"></div>
+    <div class="sui-sheet-header">
+      <span class="sui-sheet-title">Reader Settings</span>
+      <button class="sui-btn sui-btn-ghost sui-btn-sm sui-sheet-close" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sui-sheet-body">
+      <div class="settings-row">
+        <span class="settings-label">Font Size</span>
+        <div class="font-size-controls">
+          <button class="font-btn" id="fontDecBtn" aria-label="Decrease font size">A−</button>
+          <span class="font-size-val" id="fontSizeVal">18</span>
+          <button class="font-btn" id="fontIncBtn" aria-label="Increase font size">A+</button>
+        </div>
+      </div>
+      <hr class="sui-divider sui-divider-sm"/>
+      <div class="settings-row">
+        <span class="settings-label">Width</span>
+        <div class="sui-segmented" id="segWidth" aria-label="Line width">
+          <button class="sui-segment" role="radio" aria-checked="true" data-width="narrow">Narrow</button>
+          <button class="sui-segment" role="radio" aria-checked="false" data-width="wide">Wide</button>
+        </div>
+      </div>
+      <hr class="sui-divider sui-divider-sm"/>
+      <div class="settings-row">
+        <span class="settings-label">Font</span>
+        <div class="sui-segmented" id="segFont" aria-label="Font family">
+          <button class="sui-segment" role="radio" aria-checked="true" data-font="serif">Serif</button>
+          <button class="sui-segment" role="radio" aria-checked="false" data-font="sans">Sans</button>
+          <button class="sui-segment" role="radio" aria-checked="false" data-font="mono">Mono</button>
+        </div>
+      </div>
+      <hr class="sui-divider sui-divider-sm"/>
+      <div class="settings-row" style="border-bottom:none;">
+        <span class="settings-label">Theme</span>
+        <div class="sui-segmented" id="segTheme" aria-label="Theme">
+          <button class="sui-segment" role="radio" aria-checked="true" data-thm="light">Light</button>
+          <button class="sui-segment" role="radio" aria-checked="false" data-thm="dark">Dark</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ============================================================
+     IMPORT DIALOG (native <dialog> + SUI)
+     ============================================================ -->
+<dialog class="sui-dialog import-dialog" id="importDialog">
+  <div class="sui-modal-header">
+    <h3 class="sui-modal-title">Import Document</h3>
+    <button class="sui-modal-close" id="importCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sui-modal-body">
+    <div class="import-sub active" id="importMain">
+      <div class="sui-dropzone sui-mb-2" id="importDropzone" style="text-align:center; padding:var(--sui-space-4);">
+        <svg class="icon icon-xl" style="color:var(--sui-blue-primary); margin-bottom:var(--sui-space-2);"><use href="#i-file-text"/></svg>
+        <div style="font-weight:var(--sui-weight-semibold); margin-bottom:4px;">Drop .md files here</div>
+        <div style="font-size:var(--sui-text-meta); color:var(--sui-text-muted); margin-bottom:var(--sui-space-3);">or</div>
+        <button class="sui-btn sui-btn-primary" id="importFileBtn"><svg class="icon"><use href="#i-plus"/></svg> Browse Files</button>
+      </div>
+      <button class="import-option" id="importPasteBtn">
+        <div class="import-option-icon" style="background:var(--sui-success-soft); color:var(--sui-success);"><svg class="icon icon-lg"><use href="#i-clipboard"/></svg></div>
+        <div><div class="import-option-label">Paste Markdown</div><div class="import-option-desc">Paste content from clipboard</div></div>
+      </button>
+      <button class="import-option" id="importUrlBtn">
+        <div class="import-option-icon" style="background:var(--sui-warning-soft); color:var(--sui-warning-strong);"><svg class="icon icon-lg"><use href="#i-link"/></svg></div>
+        <div><div class="import-option-label">Open from URL</div><div class="import-option-desc">Load raw Markdown from a URL</div></div>
+      </button>
+    </div>
+    <div class="import-sub" id="importPasteView">
+      <button class="import-back-btn" id="pasteBackBtn"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> Back</button>
+      <hr class="sui-divider sui-divider-sm"/>
+      <div class="sui-input-group sui-mt-2">
+        <label class="sui-input-label" for="pasteTextarea">Markdown Content</label>
+        <textarea class="sui-input" id="pasteTextarea" placeholder="# Your Document Title&#10;&#10;Paste your Markdown content here..." style="min-height:200px; resize:vertical; font-family:var(--sui-font-mono); font-size:var(--sui-text-small); line-height:1.6; padding:var(--sui-space-3);"></textarea>
+      </div>
+      <button class="sui-btn sui-btn-primary sui-btn-full sui-mt-3" id="pasteSaveBtn"><svg class="icon"><use href="#i-check"/></svg> Save & Read</button>
+    </div>
+    <div class="import-sub" id="importUrlView">
+      <button class="import-back-btn" id="urlBackBtn"><svg class="icon icon-sm"><use href="#i-arrow-left"/></svg> Back</button>
+      <hr class="sui-divider sui-divider-sm"/>
+      <div class="sui-input-group sui-mt-2">
+        <label class="sui-input-label" for="urlInput">Raw Markdown URL</label>
+        <input class="sui-input" id="urlInput" type="url" placeholder="https://raw.githubusercontent.com/..." />
+        <span class="sui-input-hint">Paste a direct link to a raw .md file</span>
+      </div>
+      <button class="sui-btn sui-btn-primary sui-btn-full sui-mt-3" id="urlFetchBtn"><svg class="icon"><use href="#i-download"/></svg> Fetch & Read</button>
+    </div>
+  </div>
+</dialog>
+
+<!-- Remove confirmation dialog -->
+<dialog class="sui-dialog" id="deleteDialog" style="max-width:380px;">
+  <div class="sui-modal-header">
+    <h3 class="sui-modal-title">Remove Document</h3>
+    <button class="sui-modal-close" id="deleteCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sui-modal-body">
+    <div class="sui-alert sui-alert-error sui-mb-3">
+      <span class="sui-alert-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert-circle"/></svg></span>
+      <div class="sui-alert-content">
+        <div class="sui-alert-title">This cannot be undone</div>
+        <div id="deleteDocName">This document will be permanently removed.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sui-modal-footer">
+    <button class="sui-btn sui-btn-ghost" id="deleteCancelBtn">Cancel</button>
+    <button class="sui-btn sui-btn-danger" id="deleteConfirmBtn"><svg class="icon"><use href="#i-trash"/></svg> Remove</button>
+  </div>
+</dialog>
+
+<!-- Discard edits confirmation dialog -->
+<dialog class="sui-dialog" id="discardDialog" style="max-width:380px;">
+  <div class="sui-modal-header">
+    <h3 class="sui-modal-title">Unsaved Changes</h3>
+    <button class="sui-modal-close" id="discardCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sui-modal-body">
+    <div class="sui-alert sui-alert-warning sui-mb-3">
+      <span class="sui-alert-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert-triangle"/></svg></span>
+      <div class="sui-alert-content">
+        <div class="sui-alert-title">You have unsaved edits</div>
+        <div>Your changes will be lost if you leave without saving.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sui-modal-footer">
+    <button class="sui-btn sui-btn-ghost" id="discardCancelBtn">Keep Editing</button>
+    <button class="sui-btn sui-btn-danger" id="discardConfirmBtn"><svg class="icon"><use href="#i-trash"/></svg> Discard</button>
+  </div>
+</dialog>
+
+<!-- Section Edit bottom sheet -->
+<div class="sui-sheet" id="sectionSheet" aria-hidden="true">
+  <div class="sui-sheet-panel" style="max-height:75vh;">
+    <div class="sui-sheet-handle"></div>
+    <div class="sui-sheet-header">
+      <span class="sui-sheet-title" id="sectionSheetTitle">Edit Section</span>
+      <button class="sui-btn sui-btn-ghost sui-btn-sm sui-sheet-close" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sui-sheet-body" style="display:flex; flex-direction:column; padding-bottom:0;">
+      <textarea class="sui-input" id="sectionTextarea" style="flex:1; font-family:var(--sui-font-mono); font-size:var(--sui-text-small); line-height:1.6; min-height:200px; resize:none;"></textarea>
+    </div>
+    <div class="sui-sheet-footer" style="padding:var(--sui-space-2) var(--sui-space-3); display:flex; justify-content:flex-end; gap:var(--sui-space-2); border-top:1px solid var(--sui-border);">
+      <button class="sui-btn sui-btn-ghost sui-btn-sm" id="sectionCancelBtn">Cancel</button>
+      <button class="sui-btn sui-btn-success sui-btn-sm" id="sectionSaveBtn"><svg class="icon"><use href="#i-check"/></svg> Save</button>
+    </div>
+  </div>
+</div>
+
+<input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain" multiple style="display:none;" />
+
+<!-- SUI toast container (managed by SUI.toast API) -->
+
+<!-- ============================================================
+     APPLICATION SCRIPT
+     ============================================================ -->
+<script>
+(function() {
+'use strict';
+
+const $ = id => document.getElementById(id);
+const $$ = sel => document.querySelectorAll(sel);
+
+// ============================================================
+// ICON HELPER — generates SVG use refs for dynamic content
+// ============================================================
+function icon(name, cls = '') {
+  return `<svg class="icon ${cls}"><use href="#i-${name}"/></svg>`;
+}
+
+// ============================================================
+// TOAST — use SUI.toast API
+// ============================================================
+function toast(msg, type = 'info') {
+  if (typeof SUI !== 'undefined' && SUI.toast) {
+    if (SUI.toast[type]) SUI.toast[type](msg);
+    else SUI.toast.info(msg);
+  }
+}
+
+function uuid() {
+  return crypto.randomUUID ? crypto.randomUUID() :
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+      const r = Math.random() * 16 | 0;
+      return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+    });
+}
+
+function timeAgo(dateStr) {
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const mins = Math.floor(diff / 60000);
+  if (mins < 1) return 'Just now';
+  if (mins < 60) return `${mins}m ago`;
+  const hrs = Math.floor(mins / 60);
+  if (hrs < 24) return `${hrs}h ago`;
+  const days = Math.floor(hrs / 24);
+  if (days < 7) return `${days}d ago`;
+  return new Date(dateStr).toLocaleDateString();
+}
+
+function extractTitle(md) {
+  const m = md.match(/^#\s+(.+)/m);
+  if (m) return m[1].replace(/[*_`#]/g, '').trim();
+  // Fallback: first 30 chars of actual content
+  const firstLine = md.split('\n').find(l => l.trim() && !l.startsWith('---'));
+  if (firstLine) return firstLine.replace(/[*_`#\[\]()]/g, '').trim().slice(0, 30) || 'Untitled';
+  return 'Untitled';
+}
+
+function extractPreview(md) {
+  const lines = md.split('\n').filter(l => l.trim() && !l.startsWith('#') && !l.startsWith('---') && !l.startsWith('|'));
+  return (lines.slice(0, 3).join(' ').replace(/[*_`\[\]()]/g, '').trim() || 'No preview').slice(0, 150);
+}
+
+function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function wordCount(md) { return (md.match(/\b\w+\b/g) || []).length; }
+
+// ============================================================
+// INDEXED DB
+// ============================================================
+const DB_NAME = 'smmr_docs'; const DB_VERSION = 1; let db;
+
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(DB_NAME, DB_VERSION);
+    req.onupgradeneeded = e => {
+      const d = e.target.result;
+      if (!d.objectStoreNames.contains('documents')) {
+        const s = d.createObjectStore('documents', { keyPath: 'id' });
+        s.createIndex('lastOpenedAt', 'lastOpenedAt');
+        s.createIndex('createdAt', 'createdAt');
+        s.createIndex('title', 'title');
+      }
+    };
+    req.onsuccess = e => { db = e.target.result; resolve(db); };
+    req.onerror = e => reject(e.target.error);
+  });
+}
+
+const dbPut = doc => new Promise((res, rej) => { const tx = db.transaction('documents', 'readwrite'); tx.objectStore('documents').put(doc); tx.oncomplete = () => res(); tx.onerror = e => rej(e.target.error); });
+const dbGet = id => new Promise((res, rej) => { const tx = db.transaction('documents', 'readonly'); const r = tx.objectStore('documents').get(id); r.onsuccess = () => res(r.result); r.onerror = e => rej(e.target.error); });
+const dbDelete = id => new Promise((res, rej) => { const tx = db.transaction('documents', 'readwrite'); tx.objectStore('documents').delete(id); tx.oncomplete = () => res(); tx.onerror = e => rej(e.target.error); });
+const dbGetAll = () => new Promise((res, rej) => { const tx = db.transaction('documents', 'readonly'); const r = tx.objectStore('documents').getAll(); r.onsuccess = () => res(r.result || []); r.onerror = e => rej(e.target.error); });
+
+// ============================================================
+// MARKDOWN
+// ============================================================
+function renderMD(md) {
+  marked.setOptions({ gfm: true, breaks: true, headerIds: true, mangle: false });
+  return DOMPurify.sanitize(marked.parse(md), { ADD_TAGS: ['input'], ADD_ATTR: ['type', 'checked', 'disabled'] });
+}
+
+// ============================================================
+// STATE
+// ============================================================
+let allDocs = [], currentDoc = null, currentTab = 'recent', searchQuery = '';
+let isEditing = false, editSnapshot = '';
+let settings = { fontSize: 18, width: 'narrow', font: 'serif', theme: 'light' };
+function loadSettings() { try { const s = localStorage.getItem('smmr_settings'); if (s) settings = { ...settings, ...JSON.parse(s) }; } catch {} }
+function saveSettings() { localStorage.setItem('smmr_settings', JSON.stringify(settings)); }
+
+// ============================================================
+// SCREENS
+// ============================================================
+function showScreen(id) { $$('.sui-screen').forEach(s => s.classList.remove('is-active')); $(id).classList.add('is-active'); }
+
+// ============================================================
+// LIBRARY
+// ============================================================
+async function loadLibrary() { allDocs = await dbGetAll(); renderLibrary(); }
+
+function renderLibrary() {
+  const list = $('libraryList'), empty = $('emptyState');
+  let docs = [...allDocs];
+  if (currentTab === 'recent') {
+    docs = docs.filter(d => d.lastOpenedAt);
+    docs.sort((a, b) => new Date(b.lastOpenedAt) - new Date(a.lastOpenedAt));
+  } else if (currentTab === 'favorites') {
+    docs = docs.filter(d => d.favorite);
+    docs.sort((a, b) => new Date(b.lastOpenedAt || b.createdAt) - new Date(a.lastOpenedAt || a.createdAt));
+  } else {
+    docs.sort((a, b) => a.title.localeCompare(b.title));
+  }
+  if (searchQuery) { const q = searchQuery.toLowerCase(); docs = docs.filter(d => d.title.toLowerCase().includes(q) || (d.preview || '').toLowerCase().includes(q)); }
+
+  if (docs.length === 0 && !searchQuery && allDocs.length === 0) {
+    list.style.display = 'none'; empty.style.display = 'flex';
+    $('tabBar').style.display = 'none'; $('searchWrap').style.display = 'none';
+    return;
+  }
+  empty.style.display = 'none'; list.style.display = 'block';
+  $('tabBar').style.display = ''; $('searchWrap').style.display = '';
+
+  if (docs.length === 0) { list.innerHTML = '<div class="sui-empty" style="padding:48px 24px;"><p class="sui-text-muted">No matching documents found.</p></div>'; return; }
+
+  list.innerHTML = docs.map(doc => {
+    const srcClass = doc.sourceType === 'paste' ? 'src-paste' : doc.sourceType === 'url' ? 'src-url' : '';
+    const srcIcon = doc.sourceType === 'paste' ? 'clipboard' : doc.sourceType === 'url' ? 'link' : 'file-text';
+    const wc = wordCount(doc.markdown || '');
+    const showRemoveRecent = currentTab === 'recent';
+    return `
+      <div class="doc-card" data-id="${doc.id}">
+        <div class="doc-icon ${srcClass}">${icon(srcIcon)}</div>
+        <div class="doc-info">
+          <div class="doc-title">${escapeHtml(doc.title)}</div>
+          <div class="doc-preview">${escapeHtml(doc.preview || '')}</div>
+          <div class="sui-meta"><span>${timeAgo(doc.lastOpenedAt || doc.createdAt)}</span><span>${Math.max(1, Math.ceil(wc / 238))} min read</span><span>${wc.toLocaleString()} words</span></div>
+        </div>
+        <div class="doc-card-actions">
+          <button class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${doc.id}" title="Favorite" aria-label="Toggle favorite">
+            ${icon(doc.favorite ? 'star-filled' : 'star', 'icon-sm')}
+          </button>
+          ${showRemoveRecent
+            ? `<button class="doc-action-btn" data-remove-recent="${doc.id}" title="Clear from Recent" aria-label="Clear from Recent">${icon('clock', 'icon-sm')}</button>`
+            : `<button class="doc-action-btn" data-del="${doc.id}" title="Remove" aria-label="Remove">${icon('trash', 'icon-sm')}</button>`
+          }
+        </div>
+      </div>`;
+  }).join('');
+
+  // Events
+  list.querySelectorAll('.doc-card').forEach(card => {
+    card.addEventListener('click', e => { if (e.target.closest('.doc-action-btn')) return; openDocument(card.dataset.id); });
+  });
+  list.querySelectorAll('[data-fav]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const doc = allDocs.find(d => d.id === btn.dataset.fav);
+      if (doc) { doc.favorite = !doc.favorite; doc.updatedAt = new Date().toISOString(); await dbPut(doc); renderLibrary(); toast(doc.favorite ? 'Added to favorites' : 'Removed from favorites', doc.favorite ? 'success' : 'info'); }
+    });
+  });
+  list.querySelectorAll('[data-remove-recent]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const doc = allDocs.find(d => d.id === btn.dataset.removeRecent);
+      if (doc) { doc.lastOpenedAt = null; doc.updatedAt = new Date().toISOString(); await dbPut(doc); renderLibrary(); toast('Cleared from Recent', 'info'); }
+    });
+  });
+  list.querySelectorAll('[data-del]').forEach(btn => {
+    btn.addEventListener('click', async e => {
+      e.stopPropagation();
+      const doc = allDocs.find(d => d.id === btn.dataset.del);
+      if (doc) {
+        pendingDeleteId = doc.id;
+        $('deleteDocName').textContent = `"${doc.title}" will be permanently removed.`;
+        $('deleteDialog').showModal();
+      }
+    });
+  });
+}
+
+// ============================================================
+// IMPORT — native <dialog>
+// ============================================================
+function openImportModal() { $('importMain').classList.add('active'); $('importPasteView').classList.remove('active'); $('importUrlView').classList.remove('active'); $('importDialog').showModal(); }
+function closeImportModal() { $('importDialog').close(); $('pasteTextarea').value = ''; $('urlInput').value = ''; }
+
+async function saveDoc(md, sourceType, sourceUrl) {
+  const now = new Date().toISOString();
+  const doc = { id: uuid(), title: extractTitle(md), markdown: md, preview: extractPreview(md), sourceType, sourceUrl: sourceUrl || null, favorite: false, createdAt: now, updatedAt: now, lastOpenedAt: now, lastScrollY: 0 };
+  await dbPut(doc); allDocs.push(doc); return doc;
+}
+
+$('fileInput').addEventListener('change', async e => {
+  const files = Array.from(e.target.files); if (!files.length) return;
+  closeImportModal(); let lastDoc;
+  for (const file of files) { const text = await file.text(); lastDoc = await saveDoc(text, 'file'); lastDoc.title = file.name.replace(/\.(md|markdown|txt)$/i, '') || lastDoc.title; await dbPut(lastDoc); }
+  toast(`Imported ${files.length} document${files.length > 1 ? 's' : ''}`, 'success');
+  if (files.length === 1 && lastDoc) openDocument(lastDoc.id); else await loadLibrary();
+  e.target.value = '';
+});
+
+$('pasteSaveBtn').addEventListener('click', async () => {
+  const md = $('pasteTextarea').value.trim(); if (!md) { toast('Please paste some content', 'warning'); return; }
+  closeImportModal(); const doc = await saveDoc(md, 'paste'); toast('Document saved', 'success'); openDocument(doc.id);
+});
+
+$('urlFetchBtn').addEventListener('click', async () => {
+  const url = $('urlInput').value.trim(); if (!url) { toast('Please enter a URL', 'warning'); return; }
+  $('urlFetchBtn').disabled = true; $('urlFetchBtn').innerHTML = `${icon('loader', 'icon-spin')} Fetching...`;
+  try {
+    const resp = await fetch(url); if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const md = await resp.text(); closeImportModal();
+    const doc = await saveDoc(md, 'url', url); toast('Document fetched & saved', 'success'); openDocument(doc.id);
+  } catch (err) { toast(`Failed: ${err.message}`, 'error'); }
+  finally { $('urlFetchBtn').disabled = false; $('urlFetchBtn').innerHTML = `${icon('download')} Fetch & Read`; }
+});
+
+// ============================================================
+// READER
+// ============================================================
+async function openDocument(id) {
+  const doc = allDocs.find(d => d.id === id) || await dbGet(id);
+  if (!doc) { toast('Document not found', 'error'); return; }
+  currentDoc = doc; doc.lastOpenedAt = new Date().toISOString(); await dbPut(doc);
+  exitEditMode(); renderDoc(); showScreen('readerScreen');
+  requestAnimationFrame(() => { $('readerBody').scrollTop = doc.lastScrollY || 0; });
+}
+
+function buildTOC() {
+  const tocList = $('tocList');
+  const headers = $('readerContent').querySelectorAll('h1,h2,h3,h4,h5,h6');
+  tocList.innerHTML = '';
+  headers.forEach((h, i) => {
+    const level = parseInt(h.tagName[1]); if (!h.id) h.id = `heading-${i}`;
+    const row = document.createElement('div'); row.className = 'toc-item';
+    row.style.paddingLeft = `${12 + (level - 1) * 16}px`;
+    const text = document.createElement('span'); text.className = 'toc-item-text';
+    text.textContent = h.textContent;
+    if (level <= 2) text.style.fontWeight = 'var(--sui-weight-semibold)';
+    text.addEventListener('click', () => { h.scrollIntoView({ behavior: 'smooth', block: 'start' }); closeTOC(); });
+    const editBtn = document.createElement('button'); editBtn.className = 'toc-edit-btn';
+    editBtn.innerHTML = icon('pencil', 'icon-sm');
+    editBtn.title = 'Edit this section';
+    editBtn.setAttribute('aria-label', `Edit section: ${h.textContent}`);
+    editBtn.addEventListener('click', e => { e.stopPropagation(); openSectionEdit(i); });
+    row.appendChild(text); row.appendChild(editBtn);
+    tocList.appendChild(row);
+  });
+}
+
+// ============================================================
+// SECTION EDITING — edit one section via bottom sheet
+// ============================================================
+let activeSectionEdit = null;
+
+function parseSections(md) {
+  // Find all header line positions in raw markdown, skipping code blocks
+  const lines = md.split('\n');
+  const sections = [];
+  let inCodeBlock = false;
+  lines.forEach((line, i) => {
+    if (line.trim().startsWith('```')) { inCodeBlock = !inCodeBlock; return; }
+    if (inCodeBlock) return;
+    const m = line.match(/^(#{1,6})\s+(.+)/);
+    if (m) sections.push({ lineIndex: i, level: m[1].length, title: m[2].trim() });
+  });
+  return sections;
+}
+
+function openSectionEdit(headerIndex) {
+  if (!currentDoc) return;
+  const sections = parseSections(currentDoc.markdown);
+  if (headerIndex >= sections.length) return;
+
+  const sec = sections[headerIndex];
+  const lines = currentDoc.markdown.split('\n');
+  const startLine = sec.lineIndex;
+
+  // Find the end: next header at same or higher level (lower number), or end of doc
+  let endLine = lines.length;
+  for (let i = headerIndex + 1; i < sections.length; i++) {
+    if (sections[i].level <= sec.level) { endLine = sections[i].lineIndex; break; }
+  }
+
+  const sectionText = lines.slice(startLine, endLine).join('\n');
+  activeSectionEdit = { startLine, endLine, headerIndex };
+
+  $('sectionSheetTitle').textContent = `Edit: ${sec.title}`;
+  $('sectionTextarea').value = sectionText;
+  closeTOC();
+  SUI.sheet.open($('sectionSheet'));
+  setTimeout(() => $('sectionTextarea').focus(), 100);
+}
+
+$('sectionSaveBtn').addEventListener('click', async () => {
+  if (!currentDoc || !activeSectionEdit) return;
+  const lines = currentDoc.markdown.split('\n');
+  const { startLine, endLine } = activeSectionEdit;
+  const newSection = $('sectionTextarea').value;
+
+  // Splice the edited section back in
+  const before = lines.slice(0, startLine);
+  const after = lines.slice(endLine);
+  currentDoc.markdown = [...before, ...newSection.split('\n'), ...after].join('\n');
+  currentDoc.title = extractTitle(currentDoc.markdown);
+  currentDoc.preview = extractPreview(currentDoc.markdown);
+  currentDoc.updatedAt = new Date().toISOString();
+  await dbPut(currentDoc);
+
+  // Re-render
+  renderDoc();
+  SUI.sheet.close($('sectionSheet'));
+  activeSectionEdit = null;
+  toast('Section saved', 'success');
+});
+
+$('sectionCancelBtn').addEventListener('click', () => { SUI.sheet.close($('sectionSheet')); activeSectionEdit = null; });
+// Also reset if sheet closes via X button or backdrop (SUI auto-close)
+const secSheetObs = new MutationObserver(() => {
+  if (!$('sectionSheet').classList.contains('is-open')) activeSectionEdit = null;
+});
+secSheetObs.observe($('sectionSheet'), { attributes: true, attributeFilter: ['class'] });
+
+function renderDoc() {
+  $('readerContent').innerHTML = renderMD(currentDoc.markdown);
+  $('readerDocTitle').textContent = currentDoc.title;
+  const wc = wordCount(currentDoc.markdown);
+  const readMin = Math.max(1, Math.ceil(wc / 238));
+  $('readerMeta').textContent = `${wc.toLocaleString()} words · ${readMin} min read`;
+  buildTOC();
+}
+
+let scrollTimer;
+$('readerBody').addEventListener('scroll', () => {
+  $('backToTopBtn').classList.toggle('visible', $('readerBody').scrollTop > 300);
+  clearTimeout(scrollTimer);
+  scrollTimer = setTimeout(async () => { if (currentDoc && !isEditing) { currentDoc.lastScrollY = $('readerBody').scrollTop; await dbPut(currentDoc); } }, 1000);
+});
+
+$('backToTopBtn').addEventListener('click', () => $('readerBody').scrollTo({ top: 0, behavior: 'smooth' }));
+
+$('readerBackBtn').addEventListener('click', async () => {
+  confirmDiscard(async () => {
+    exitEditMode(); showScreen('libraryScreen'); await loadLibrary(); currentDoc = null;
+  });
+});
+
+$('shareBtn').addEventListener('click', async () => {
+  if (!currentDoc) return;
+  if (navigator.share) { try { await navigator.share({ title: currentDoc.title, text: currentDoc.markdown.slice(0, 500) }); } catch (e) { if (e.name !== 'AbortError') copyClip(currentDoc.markdown); } }
+  else copyClip(currentDoc.markdown);
+});
+async function copyClip(text) {
+  if (typeof SUI !== 'undefined' && SUI.copy) { SUI.copy.text(text); toast('Copied to clipboard', 'success'); }
+  else { try { await navigator.clipboard.writeText(text); toast('Copied to clipboard', 'success'); } catch { toast('Unable to copy', 'error'); } }
+}
+
+// ============================================================
+// EDITOR
+// ============================================================
+function enterEditMode() {
+  if (!currentDoc) return; isEditing = true; editSnapshot = currentDoc.markdown;
+  closeFind(); // clear reader highlights before switching
+  $('editorTextarea').value = currentDoc.markdown;
+  $('editorBar').classList.add('active'); $('editorToolbar').classList.add('active'); $('editorContainer').classList.add('active');
+  $('readerBody').style.display = 'none'; $('backToTopBtn').style.display = 'none';
+  $('editToggleBtn').style.display = 'none'; $('tocBtn').style.display = 'none';
+  $('readerSettingsBtn').style.display = 'none'; $('shareBtn').style.display = 'none';
+  $('findToggleBtn').style.display = 'none';
+  $('editorTextarea').focus();
+}
+function exitEditMode() {
+  isEditing = false;
+  closeFind();
+  $('editorBar').classList.remove('active'); $('editorToolbar').classList.remove('active'); $('editorContainer').classList.remove('active');
+  $('readerBody').style.display = ''; $('backToTopBtn').style.display = '';
+  $('editToggleBtn').style.display = ''; $('tocBtn').style.display = '';
+  $('readerSettingsBtn').style.display = ''; $('shareBtn').style.display = '';
+  $('findToggleBtn').style.display = '';
+}
+
+// Auto-closing pairs — type [ and get [] with cursor between
+$('editorTextarea').addEventListener('keydown', e => {
+  const pairs = { '[': ']', '(': ')', '*': '*', '`': '`', '"': '"', '_': '_' };
+  const close = pairs[e.key];
+  if (!close) return;
+  const ta = e.target, start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.substring(start, end);
+  if (selected) {
+    // Wrap selection
+    e.preventDefault();
+    ta.setRangeText(e.key + selected + close, start, end, 'select');
+    ta.selectionStart = start + 1; ta.selectionEnd = end + 1;
+  } else if (e.key === close && ta.value[end] === close) {
+    // Skip over existing closing char
+    e.preventDefault();
+    ta.selectionStart = ta.selectionEnd = end + 1;
+  } else {
+    e.preventDefault();
+    ta.setRangeText(e.key + close, start, end, 'end');
+    ta.selectionStart = ta.selectionEnd = start + 1;
+  }
+});
+
+// ============================================================
+// FORMATTING TOOLBAR
+// ============================================================
+function editorInsert(before, after, placeholder) {
+  const ta = $('editorTextarea');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.substring(start, end);
+  const text = selected || placeholder || '';
+  const replacement = before + text + (after || '');
+  ta.setRangeText(replacement, start, end, 'select');
+  // Select just the text part (not the markdown syntax)
+  ta.selectionStart = start + before.length;
+  ta.selectionEnd = start + before.length + text.length;
+  ta.focus();
+}
+
+function editorInsertLine(prefix, placeholder) {
+  const ta = $('editorTextarea');
+  const start = ta.selectionStart, end = ta.selectionEnd;
+  const selected = ta.value.substring(start, end);
+  const lines = (selected || placeholder || '').split('\n');
+  const replacement = lines.map(l => prefix + l).join('\n');
+  // Ensure we start on a new line
+  const before = ta.value.substring(0, start);
+  const needsNewline = before.length > 0 && !before.endsWith('\n');
+  const insert = (needsNewline ? '\n' : '') + replacement;
+  ta.setRangeText(insert, start, end, 'end');
+  ta.focus();
+}
+
+const fmtActions = {
+  bold:    () => editorInsert('**', '**', 'bold text'),
+  italic:  () => editorInsert('*', '*', 'italic text'),
+  heading: () => { const ta = $('editorTextarea'); const pos = ta.selectionStart; const before = ta.value.substring(0, pos); const needsNl = before.length > 0 && !before.endsWith('\n'); editorInsert((needsNl ? '\n' : '') + '## ', '', 'Heading'); },
+  link:    () => { const ta = $('editorTextarea'); const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd); if (sel && sel.startsWith('http')) editorInsert('[link text](', ')', sel); else editorInsert('[', '](https://)', sel || 'link text'); },
+  image:   () => editorInsert('![', '](https://)', 'alt text'),
+  ul:      () => editorInsertLine('- ', 'List item'),
+  ol:      () => { const ta = $('editorTextarea'); const start = ta.selectionStart, end = ta.selectionEnd; const selected = ta.value.substring(start, end); const lines = (selected || 'List item').split('\n'); const replacement = lines.map((l, i) => `${i + 1}. ${l}`).join('\n'); const before = ta.value.substring(0, start); const needsNl = before.length > 0 && !before.endsWith('\n'); ta.setRangeText((needsNl ? '\n' : '') + replacement, start, end, 'end'); ta.focus(); },
+  quote:   () => editorInsertLine('> ', 'Quote text'),
+  code:    () => { const ta = $('editorTextarea'); const sel = ta.value.substring(ta.selectionStart, ta.selectionEnd); if (sel.includes('\n')) editorInsert('```\n', '\n```', sel); else editorInsert('`', '`', 'code'); },
+  hr:      () => { const ta = $('editorTextarea'); const pos = ta.selectionStart; const before = ta.value.substring(0, pos); const needsNl = before.length > 0 && !before.endsWith('\n'); ta.setRangeText((needsNl ? '\n\n' : '') + '---\n', pos, pos, 'end'); ta.focus(); },
+};
+
+$$('[data-fmt]').forEach(btn => btn.addEventListener('click', () => {
+  const action = fmtActions[btn.dataset.fmt];
+  if (action) action();
+}));
+
+// ============================================================
+// FIND & HIGHLIGHT — reader mode only
+// Wraps matches in <mark> elements with scroll-to navigation
+// ============================================================
+let findMarks = [], findIndex = -1;
+
+function clearHighlights() {
+  $('readerContent').querySelectorAll('.sui-mark, .sui-mark-current').forEach(mark => {
+    const parent = mark.parentNode;
+    parent.replaceChild(document.createTextNode(mark.textContent), mark);
+    parent.normalize();
+  });
+  findMarks = []; findIndex = -1;
+}
+
+function runFind() {
+  const query = $('findInput').value;
+  if (!query) { clearHighlights(); $('findCount').textContent = ''; return; }
+
+  // Reader mode: walk text nodes, wrap matches in <mark>
+  clearHighlights();
+  const content = $('readerContent');
+  const walker = document.createTreeWalker(content, NodeFilter.SHOW_TEXT, null);
+  const textNodes = [];
+  let node;
+  while ((node = walker.nextNode())) textNodes.push(node);
+
+  const q = query.toLowerCase();
+  textNodes.forEach(textNode => {
+    const text = textNode.textContent;
+    const lower = text.toLowerCase();
+    let pos = 0, lastEnd = 0;
+    const fragments = [];
+    while ((pos = lower.indexOf(q, pos)) !== -1) {
+      if (pos > lastEnd) fragments.push(document.createTextNode(text.slice(lastEnd, pos)));
+      const mark = document.createElement('mark');
+      mark.className = 'sui-mark';
+      mark.textContent = text.slice(pos, pos + query.length);
+      fragments.push(mark);
+      findMarks.push(mark);
+      lastEnd = pos + query.length;
+      pos += query.length;
+    }
+    if (fragments.length > 0) {
+      if (lastEnd < text.length) fragments.push(document.createTextNode(text.slice(lastEnd)));
+      const parent = textNode.parentNode;
+      fragments.forEach(f => parent.insertBefore(f, textNode));
+      parent.removeChild(textNode);
+    }
+  });
+
+  if (!findMarks.length) { $('findCount').textContent = '0 found'; findIndex = -1; return; }
+  findIndex = 0;
+  findMarks[0].className = 'sui-mark-current';
+  findMarks[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('findCount').textContent = `1 of ${findMarks.length}`;
+}
+
+function findNavigate(dir) {
+  if (!findMarks.length) return;
+
+  // Reader mode: move highlight
+  findMarks[findIndex].className = 'sui-mark';
+  if (dir === 'next') { findIndex++; if (findIndex >= findMarks.length) { findIndex = 0; toast('Wrapped to top', 'info'); } }
+  else { findIndex--; if (findIndex < 0) { findIndex = findMarks.length - 1; toast('Wrapped to bottom', 'info'); } }
+  findMarks[findIndex].className = 'sui-mark-current';
+  findMarks[findIndex].scrollIntoView({ behavior: 'smooth', block: 'center' });
+  $('findCount').textContent = `${findIndex + 1} of ${findMarks.length}`;
+}
+
+function openFind() {
+  $('findBar').classList.add('active');
+  $('findInput').focus(); $('findInput').select();
+}
+
+function closeFind() {
+  $('findBar').classList.remove('active');
+  clearHighlights();
+  $('findCount').textContent = ''; $('findInput').value = '';
+}
+
+$('findToggleBtn').addEventListener('click', () => {
+  if ($('findBar').classList.contains('active')) closeFind(); else openFind();
+});
+$('findCloseBtn').addEventListener('click', closeFind);
+$('findInput').addEventListener('input', runFind);
+$('findNextBtn').addEventListener('click', () => findNavigate('next'));
+$('findPrevBtn').addEventListener('click', () => findNavigate('prev'));
+$('findInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') { e.preventDefault(); findNavigate(e.shiftKey ? 'prev' : 'next'); }
+  if (e.key === 'Escape') { e.stopPropagation(); closeFind(); }
+});
+
+// ============================================================
+// DISCARD CONFIRMATION DIALOG
+// ============================================================
+let discardCallback = null;
+function confirmDiscard(cb) {
+  if (!isEditing || $('editorTextarea').value === editSnapshot) { cb(); return; }
+  discardCallback = cb;
+  $('discardDialog').showModal();
+}
+$('discardConfirmBtn').addEventListener('click', () => { $('discardDialog').close(); if (discardCallback) { discardCallback(); discardCallback = null; } });
+$('discardCancelBtn').addEventListener('click', () => { $('discardDialog').close(); discardCallback = null; });
+$('discardCloseX').addEventListener('click', () => { $('discardDialog').close(); discardCallback = null; });
+$('discardDialog').addEventListener('click', e => { if (e.target === $('discardDialog')) { $('discardDialog').close(); discardCallback = null; } });
+
+// ============================================================
+// EDITOR EVENTS
+// ============================================================
+$('editToggleBtn').addEventListener('click', enterEditMode);
+$('editorCancelBtn').addEventListener('click', () => confirmDiscard(() => exitEditMode()));
+$('editorSaveBtn').addEventListener('click', async () => {
+  if (!currentDoc) return;
+  const newMd = $('editorTextarea').value;
+  currentDoc.markdown = newMd; currentDoc.title = extractTitle(newMd); currentDoc.preview = extractPreview(newMd); currentDoc.updatedAt = new Date().toISOString();
+  await dbPut(currentDoc);
+  const idx = allDocs.findIndex(d => d.id === currentDoc.id); if (idx !== -1) allDocs[idx] = currentDoc;
+  renderDoc(); exitEditMode(); toast('Document saved', 'success');
+});
+
+// ============================================================
+// TOC
+// ============================================================
+function openTOC() { $('tocBackdrop').classList.add('is-open'); $('tocPanel').classList.add('is-open'); }
+function closeTOC() { $('tocBackdrop').classList.remove('is-open'); $('tocPanel').classList.remove('is-open'); }
+$('tocBtn').addEventListener('click', openTOC); $('tocCloseBtn').addEventListener('click', closeTOC); $('tocBackdrop').addEventListener('click', closeTOC);
+
+// ============================================================
+// REMOVE CONFIRMATION DIALOG
+// ============================================================
+let pendingDeleteId = null;
+$('deleteConfirmBtn').addEventListener('click', async () => {
+  if (pendingDeleteId) {
+    await dbDelete(pendingDeleteId);
+    allDocs = allDocs.filter(d => d.id !== pendingDeleteId);
+    pendingDeleteId = null;
+    $('deleteDialog').close();
+    renderLibrary();
+    toast('Document removed', 'info');
+  }
+});
+$('deleteCloseX').addEventListener('click', () => $('deleteDialog').close());
+$('deleteCancelBtn').addEventListener('click', () => $('deleteDialog').close());
+$('deleteDialog').addEventListener('click', e => { if (e.target === $('deleteDialog')) $('deleteDialog').close(); });
+
+// ============================================================
+// SETTINGS — uses SUI.sheet from SUI
+// ============================================================
+function openSettings() { SUI.sheet.open($('settingsSheet')); }
+function closeSettings() { SUI.sheet.close($('settingsSheet')); }
+$('readerSettingsBtn').addEventListener('click', openSettings);
+
+function applyFontSize(size) { settings.fontSize = Math.max(14, Math.min(28, size)); $('fontSizeVal').textContent = settings.fontSize; document.documentElement.style.setProperty('--reader-font-size', settings.fontSize + 'px'); saveSettings(); }
+$('fontDecBtn').addEventListener('click', () => applyFontSize(settings.fontSize - 2));
+$('fontIncBtn').addEventListener('click', () => applyFontSize(settings.fontSize + 2));
+
+$$('[data-width]').forEach(btn => btn.addEventListener('click', () => { $$('[data-width]').forEach(b => b.setAttribute('aria-checked', 'false')); btn.setAttribute('aria-checked', 'true'); settings.width = btn.dataset.width; document.documentElement.style.setProperty('--reader-max-width', settings.width === 'wide' ? '900px' : '680px'); saveSettings(); }));
+
+$$('[data-font]').forEach(btn => btn.addEventListener('click', () => { $$('[data-font]').forEach(b => b.setAttribute('aria-checked', 'false')); btn.setAttribute('aria-checked', 'true'); settings.font = btn.dataset.font; const f = { serif: "'Newsreader', Georgia, serif", sans: "var(--sui-font-primary)", mono: "var(--sui-font-mono)" }; document.documentElement.style.setProperty('--reader-font-family', f[settings.font]); saveSettings(); }));
+
+$$('[data-thm]').forEach(btn => btn.addEventListener('click', () => { $$('[data-thm]').forEach(b => b.setAttribute('aria-checked', 'false')); btn.setAttribute('aria-checked', 'true'); settings.theme = btn.dataset.thm; if (typeof SUI !== 'undefined' && SUI.theme) SUI.theme.set(settings.theme); else document.documentElement.setAttribute('data-theme', settings.theme); saveSettings(); }));
+
+$('themeToggleBtn').addEventListener('click', () => {
+  if (typeof SUI !== 'undefined' && SUI.theme) { SUI.theme.toggle(); }
+  else { document.documentElement.setAttribute('data-theme', document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark'); }
+  settings.theme = document.documentElement.getAttribute('data-theme') || 'light';
+  $$('[data-thm]').forEach(b => b.setAttribute('aria-checked', b.dataset.thm === settings.theme ? 'true' : 'false'));
+  saveSettings();
+});
+
+// ============================================================
+// IMPORT EVENTS
+// ============================================================
+$('importBtn').addEventListener('click', openImportModal); $('emptyImportBtn').addEventListener('click', openImportModal);
+$('importCloseX').addEventListener('click', closeImportModal);
+// Close on backdrop click (native dialog ::backdrop)
+$('importDialog').addEventListener('click', e => { if (e.target === $('importDialog')) closeImportModal(); });
+$('importFileBtn').addEventListener('click', () => $('fileInput').click());
+$('importPasteBtn').addEventListener('click', () => { $('importMain').classList.remove('active'); $('importPasteView').classList.add('active'); $('pasteTextarea').focus(); });
+$('importUrlBtn').addEventListener('click', () => { $('importMain').classList.remove('active'); $('importUrlView').classList.add('active'); $('urlInput').focus(); });
+$('pasteBackBtn').addEventListener('click', () => { $('importPasteView').classList.remove('active'); $('importMain').classList.add('active'); });
+$('urlBackBtn').addEventListener('click', () => { $('importUrlView').classList.remove('active'); $('importMain').classList.add('active'); });
+
+// Dropzone drag-and-drop (sui-dropzone handles .is-dragover styling)
+const dz = $('importDropzone');
+['dragenter', 'dragover'].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dz.classList.add('is-dragover'); }));
+['dragleave', 'drop'].forEach(evt => dz.addEventListener(evt, e => { e.preventDefault(); e.stopPropagation(); dz.classList.remove('is-dragover'); }));
+dz.addEventListener('drop', async e => {
+  const files = Array.from(e.dataTransfer.files).filter(f => /\.(md|markdown|txt)$/i.test(f.name) || f.type.startsWith('text/'));
+  if (!files.length) { toast('Drop .md, .markdown, or .txt files', 'warning'); return; }
+  closeImportModal(); let lastDoc;
+  for (const file of files) { const text = await file.text(); lastDoc = await saveDoc(text, 'file'); lastDoc.title = file.name.replace(/\.(md|markdown|txt)$/i, '') || lastDoc.title; await dbPut(lastDoc); }
+  toast(`Imported ${files.length} document${files.length > 1 ? 's' : ''}`, 'success');
+  if (files.length === 1 && lastDoc) openDocument(lastDoc.id); else await loadLibrary();
+});
+
+// ============================================================
+// TABS
+// ============================================================
+$$('.sui-tab').forEach(tab => tab.addEventListener('click', () => { $$('.sui-tab').forEach(t => t.setAttribute('aria-selected', 'false')); tab.setAttribute('aria-selected', 'true'); currentTab = tab.dataset.tab; renderLibrary(); }));
+$('librarySearch').addEventListener('input', e => { searchQuery = e.target.value.trim(); renderLibrary(); });
+
+// ============================================================
+// OFFLINE
+// ============================================================
+function updateOnline() { $('offlineBar').classList.toggle('show', !navigator.onLine); }
+window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', e => {
+  if ((e.metaKey || e.ctrlKey) && e.key === 's' && isEditing) { e.preventDefault(); $('editorSaveBtn').click(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'b' && isEditing) { e.preventDefault(); fmtActions.bold(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'i' && isEditing) { e.preventDefault(); fmtActions.italic(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'f' && !isEditing) { e.preventDefault(); $('findToggleBtn').click(); }
+  if (e.key === 'Escape') { if ($('findBar').classList.contains('active')) { closeFind(); return; } if (isEditing) { $('editorCancelBtn').click(); return; } closeTOC(); closeSettings(); }
+});
+
+// ============================================================
+// APPLY SETTINGS & INIT
+// ============================================================
+function applyAllSettings() {
+  loadSettings();
+  if (typeof SUI !== 'undefined' && SUI.theme) SUI.theme.set(settings.theme);
+  else document.documentElement.setAttribute('data-theme', settings.theme);
+  $$('[data-thm]').forEach(b => b.setAttribute('aria-checked', b.dataset.thm === settings.theme ? 'true' : 'false'));
+  document.documentElement.style.setProperty('--reader-font-size', settings.fontSize + 'px');
+  $('fontSizeVal').textContent = settings.fontSize;
+  document.documentElement.style.setProperty('--reader-max-width', settings.width === 'wide' ? '900px' : '680px');
+  $$('[data-width]').forEach(b => b.setAttribute('aria-checked', b.dataset.width === settings.width ? 'true' : 'false'));
+  const f = { serif: "'Newsreader', Georgia, serif", sans: "var(--sui-font-primary)", mono: "var(--sui-font-mono)" };
+  document.documentElement.style.setProperty('--reader-font-family', f[settings.font] || f.serif);
+  $$('[data-font]').forEach(b => b.setAttribute('aria-checked', b.dataset.font === settings.font ? 'true' : 'false'));
+}
+
+if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+
+async function init() {
+  try { await openDB(); applyAllSettings(); await loadLibrary(); }
+  catch (err) { console.error('Init error:', err); toast('Failed to initialize. Please refresh.', 'error'); }
+}
+init();
+
+})();
+</script>
+</body>
+</html>

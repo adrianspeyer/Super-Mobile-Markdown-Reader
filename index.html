@@ -305,6 +305,12 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   text-align: center;
   font-size: var(--sui-text-meta); color: var(--sui-text-muted);
 }
+.app-version {
+  display: inline-block;
+  font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
+  padding: 1px 6px; border-radius: var(--sui-radius-full);
+  background: var(--sui-surface-alt); color: var(--sui-text-muted);
+}
 
 /* ============================================================
    PRINT
@@ -407,7 +413,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️</div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v5.2</span></div>
 </div>
 
 <!-- ============================================================
@@ -650,7 +656,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   </div>
 </div>
 
-<input type="file" id="fileInput" accept="text/*,.md,.markdown" multiple style="display:none;" />
+<input type="file" id="fileInput" accept=".md,.markdown,.txt,text/markdown,text/plain,*/*" multiple style="display:none;" />
 
 <!-- SUI toast container (managed by SUI.toast API) -->
 

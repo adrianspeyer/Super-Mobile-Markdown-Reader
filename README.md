@@ -295,6 +295,40 @@ These are intentionally out of scope but are natural next-version features:
 
 ---
 
+## Changelog
+
+### v5.2 — 2025-02-16
+- Added version shield in app footer for at-a-glance cache verification
+- Fixed iOS file picker: `.md` files no longer greyed out (accept attribute uses `*/*` fallback)
+- Added changelog to README
+
+### v5.1
+- Added icon precaching to service worker
+- Updated `start_url` to `/` in manifest
+- Fixed `background_color` in manifest
+
+### v5.0 — SUI 2.1.2 Upgrade
+- Migrated app shell layout from custom CSS to `sui-screen`, `sui-screen-header`, `sui-screen-body`, `sui-screen-footer`
+- Screen switching via `is-active` class (SUI convention)
+- Safe area insets now handled by SUI components
+- Removed 152 lines / 8KB of custom CSS (cumulative with v4.0)
+- Cache version bumped to smmr-v5
+
+### v4.0 — SUI 2.1.0 Upgrade
+- Replaced custom reader typography with `sui-prose`
+- Replaced find highlight CSS with `sui-mark` / `sui-mark-current`
+- Replaced document metadata CSS with `sui-meta`
+- Replaced editor toolbar CSS with `sui-toolbar` / `sui-toolbar-btn` / `sui-toolbar-sep`
+- Updated theme color to `#2563EB` (SUI blue-primary)
+
+### v3.0 — Initial SUI Migration
+- Built on Speyer UI design system (tokens, buttons, dialogs, sheets, tabs, inputs, etc.)
+- Single-file PWA architecture
+- IndexedDB document storage
+- Offline-first with service worker
+
+---
+
 ## License
 
 MIT

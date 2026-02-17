@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smmr-v5.2';
+const CACHE_NAME = 'smmr-v5.3'; // Bumped version
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -18,7 +18,7 @@ self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(PRECACHE_URLS))
-      .then(() => self.skipWaiting())
+      // REMOVED: self.skipWaiting() - We want to wait for user approval now
   );
 });
 
@@ -63,4 +63,11 @@ self.addEventListener('fetch', event => {
       return cached || fetchP;
     })
   );
+});
+
+// LISTEN FOR UPDATE SIGNAL
+self.addEventListener('message', (event) => {
+  if (event.data && event.data.type === 'SKIP_WAITING') {
+    self.skipWaiting();
+  }
 });

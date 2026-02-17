@@ -1,0 +1,19 @@
+[[headers]]
+  # The service worker must NOT be cached by the browser, 
+  # otherwise updates will never be detected.
+  for = "/sw.js"
+  [headers.values]
+    Cache-Control = "max-age=0, must-revalidate"
+
+[[headers]]
+  # Good practice for the main HTML to ensure freshness if SW fails
+  for = "/index.html"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"
+
+[[headers]]
+  # Static assets (images, manifests) can be cached longer if you want,
+  # but since we don't have hashed filenames, we keep it safe.
+  for = "/*.json"
+  [headers.values]
+    Cache-Control = "public, max-age=0, must-revalidate"

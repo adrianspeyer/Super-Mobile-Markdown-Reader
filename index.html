@@ -14,9 +14,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 
 <!-- Speyer UI System -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.1.2/sui-tokens.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.1.2/sui-components.min.css"/>
-<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.1.2/sui.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.4.1/sui-tokens.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.4.1/sui-components.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.4.1/sui.min.js"></script>
 
 <!-- Markdown + Sanitizer -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
@@ -313,13 +313,49 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 }
 
 /* ============================================================
+   UPDATE TOAST (New Addition)
+   ============================================================ */
+#update-toast {
+  position: fixed;
+  bottom: 30px;
+  left: 50%;
+  transform: translate(-50%, 150%); /* Hidden by default */
+  background-color: #2d3436; /* Dark slate */
+  color: white;
+  padding: 12px 20px;
+  border-radius: 50px;
+  box-shadow: 0 10px 25px rgba(0,0,0,0.25);
+  display: flex;
+  align-items: center;
+  gap: 15px;
+  z-index: 9999;
+  transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  width: max-content;
+  max-width: 90%;
+}
+#update-toast.show {
+  transform: translate(-50%, 0); /* Visible */
+}
+#update-btn {
+  background: var(--sui-blue-primary, #2563EB);
+  color: white;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  border: none;
+  cursor: pointer;
+}
+
+/* ============================================================
    PRINT
    ============================================================ */
 @media print {
   body { overflow: visible; background: #fff; }
   .library-header, .reader-header, .toc-panel, .toc-backdrop, .sui-sheet,
   .back-to-top, .offline-bar, dialog,
-  .app-footer, .editor-bar, .editor-toolbar, .find-bar, .editor-container, .sui-toast-container { display: none !important; }
+  .app-footer, .editor-bar, .editor-toolbar, .find-bar, .editor-container, .sui-toast-container, #update-toast { display: none !important; }
   .sui-screen { display: flex !important; height: auto !important; overflow: visible !important; }
   .reader-body { overflow: visible !important; }
   #readerContent { max-width: none; padding: 0; }
@@ -328,6 +364,12 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 </style>
 </head>
 <body>
+
+<!-- Update Toast Notification -->
+<div id="update-toast">
+  <span>Update available</span>
+  <button id="update-btn">Refresh</button>
+</div>
 
 <!-- ============================================================
      SVG SPRITE SHEET (inline, zero HTTP requests)
@@ -413,7 +455,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v5.2</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v5.3</span></div>
 </div>
 
 <!-- ============================================================
@@ -604,7 +646,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   </div>
   <div class="sui-modal-body">
     <div class="sui-alert sui-alert-error sui-mb-3">
-      <span class="sui-alert-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert-circle"/></svg></span>
+      <span class="sui-alert-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert-triangle"/></svg></span>
       <div class="sui-alert-content">
         <div class="sui-alert-title">This cannot be undone</div>
         <div id="deleteDocName">This document will be permanently removed.</div>
@@ -1367,7 +1409,51 @@ function applyAllSettings() {
   $$('[data-font]').forEach(b => b.setAttribute('aria-checked', b.dataset.font === settings.font ? 'true' : 'false'));
 }
 
-if ('serviceWorker' in navigator) { window.addEventListener('load', () => { navigator.serviceWorker.register('sw.js').catch(() => {}); }); }
+// --- Robust Service Worker Update Flow ---
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', async () => {
+    let refreshing = false;
+
+    // 1. Register
+    const reg = await navigator.serviceWorker.register('./sw.js');
+
+    // 2. Listen for controller change (activates reload)
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      if (refreshing) return;
+      refreshing = true;
+      window.location.reload();
+    });
+
+    // 3. Check for waiting worker
+    if (reg.waiting) {
+      showUpdateToast(reg.waiting);
+      return;
+    }
+
+    // 4. Listen for new workers
+    reg.addEventListener('updatefound', () => {
+      const newWorker = reg.installing;
+      newWorker.addEventListener('statechange', () => {
+        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+          showUpdateToast(newWorker);
+        }
+      });
+    });
+  });
+}
+
+function showUpdateToast(worker) {
+  const toast = document.getElementById('update-toast');
+  const btn = document.getElementById('update-btn');
+  
+  toast.classList.add('show');
+  
+  btn.addEventListener('click', () => {
+    worker.postMessage({ type: 'SKIP_WAITING' });
+    btn.disabled = true;
+    btn.textContent = "Updating...";
+  });
+}
 
 async function init() {
   try { await openDB(); applyAllSettings(); await loadLibrary(); }

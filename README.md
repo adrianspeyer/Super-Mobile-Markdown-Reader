@@ -1,8 +1,8 @@
-# Super Mobile Markdown Reader
+# Super Markdown Mobile Reader
 
 A beautiful, offline-first Markdown reader and editor built for iPhone and iPad. Reading-first (70%), editing when you need it (30%).
 
-**[Live Demo →](#)** · Built with [Speyer UI v2.1.2](https://github.com/adrianspeyer/speyer-ui)
+**[Live Demo →](#)** · Built with [Speyer UI v3.1.1](https://github.com/adrianspeyer/speyer-ui)
 
 ---
 
@@ -17,7 +17,7 @@ Import Markdown documents, read them in a clean serif-typeset view, and make qui
 - **Find** — Search within documents with highlighted matches, match count, next/previous navigation, and wrap-around. Works in reader mode. Cmd/Ctrl+F shortcut
 - **Import** — From files (.md, .txt) with drag-and-drop support, paste from clipboard, or fetch from a URL
 - **Offline** — Service worker caches the app shell; IndexedDB stores your documents. Works without internet
-- **Share** — Web Share API on iOS, clipboard fallback everywhere else
+- **Share** — Dropdown menu with copy to clipboard, save as file, and native Web Share API (iOS)
 
 ---
 
@@ -108,27 +108,29 @@ Press Enter to advance, Shift+Enter to go back, Escape to close. The find bar sh
 
 ## Design System
 
-Built on [Speyer UI (SUI) v2.1.2](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
+Built on [Speyer UI (SUI) v3.1.1](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
 
 | SUI Component | Usage |
 |---|---|
-| `sui-screen` + `sui-screen-header` + `sui-screen-body` + `sui-screen-footer` | Full-viewport app shell with safe area insets, screen switching via `is-active` (v2.1.2) |
-| `sui-prose` | Reader typography — headings, paragraphs, blockquotes, code, tables, images (v2.1.0) |
-| `sui-mark` + `sui-mark-current` | Find-in-document highlighting with dark mode and print suppression (v2.1.0) |
-| `sui-meta` | Document metadata line with CSS dot separators (v2.1.0) |
-| `sui-toolbar` + `sui-toolbar-btn` + `sui-toolbar-sep` | Editor formatting toolbar with horizontal scroll (v2.1.0) |
+| `sui-screen` + `sui-screen-header` + `sui-screen-body` + `sui-screen-footer` | Full-viewport app shell with safe area insets, screen switching via `is-active` |
+| `sui-prose` | Reader typography — headings, paragraphs, blockquotes, code, tables, images |
+| `sui-mark` + `sui-mark-current` | Find-in-document highlighting with dark mode and print suppression |
+| `sui-meta` | Document metadata line with CSS dot separators |
+| `sui-toolbar` + `sui-toolbar-btn` + `sui-toolbar-sep` | Editor formatting toolbar with horizontal scroll |
 | `sui-btn` family | All buttons (primary, ghost, success, danger, sm, full) |
 | `sui-nav` + `sui-tab` | Library tabs (Recent, Favorites, All) |
 | `sui-input`, `sui-input-group`, `sui-input-label` | Search, paste textarea, URL input |
 | `sui-dialog` (native `<dialog>`) | Import modal, remove confirmation, discard confirmation |
 | `sui-sheet` + `SUI.sheet` | Reader settings panel, section editing (bottom sheets) |
+| `sui-panel` + `SUI.panel` | Table of contents slide-over (v6.0 — replaces custom TOC panel) |
+| `sui-dropdown` + `SUI.dropdown` | Share menu with copy/save/share options (v6.0) |
 | `sui-segmented` + `sui-segment` | Font, width, theme toggles in settings |
 | `sui-dropzone` | File import drag-and-drop area |
 | `sui-alert` | Remove and discard confirmation warnings |
 | `sui-badge` | Edit mode indicator |
 | `sui-divider` | Settings and import panel section breaks |
-| `sui-dropdown` | (Available for future menu features) |
 | `sui-empty` | Empty library state |
+| `sui-flex`, `sui-flex-nowrap`, `sui-items-center`, `sui-gap-*` | Layout utilities (v6.0) |
 | `SUI.toast` | Notifications (success, error, info, warning) |
 | `SUI.theme` | Light/dark toggle and persistence |
 | `SUI.copy` | Clipboard with fallback |
@@ -136,7 +138,7 @@ Built on [Speyer UI (SUI) v2.1.2](https://github.com/adrianspeyer/speyer-ui) —
 
 ### Icons
 
-Uses an inline SVG sprite sheet (31 icons, ~5KB) instead of an external icon library. Zero HTTP requests, guaranteed offline, no `createIcons()` re-rendering needed.
+Uses an inline SVG sprite sheet (35 icons, ~5KB) instead of an external icon library. Zero HTTP requests, guaranteed offline, no `createIcons()` re-rendering needed.
 
 Usage in HTML:
 ```html
@@ -201,8 +203,8 @@ Note: `lastOpenedAt` is set to `null` when a document is removed from Recent. Do
 | Dependency | CDN | Size | Purpose |
 |---|---|---|---|
 | Speyer UI tokens | jsdelivr | 4KB | Design tokens |
-| Speyer UI components | jsdelivr | ~55KB | Component classes (includes sui-screen, sui-prose, sui-mark, sui-meta, sui-toolbar) |
-| Speyer UI JS | jsdelivr | 9KB | Theme, toast, copy, modal, sheet, segmented |
+| Speyer UI components | jsdelivr | ~65KB | Component classes (includes sui-screen, sui-prose, sui-mark, sui-meta, sui-toolbar, sui-panel, sui-dropdown) |
+| Speyer UI JS | jsdelivr | ~26KB | Theme, toast, copy, modal, sheet, dropdown, panel, segmented, accordion, tooltip |
 | marked.js | jsdelivr | 38KB | Markdown parsing |
 | DOMPurify | jsdelivr | 18KB | HTML sanitization |
 | Newsreader font | Google Fonts | ~25KB | Reading typography |
@@ -287,6 +289,7 @@ These are intentionally out of scope but are natural next-version features:
 - WCAG 2.1 AA via Speyer UI's token system and contrast-tested color pairs
 - All interactive elements have `aria-label` or visible text
 - Native `<dialog>` for modals (browser-managed focus trap, Escape, backdrop)
+- `sui-panel` for TOC (focus trap on mobile, focus restoration, Escape to close)
 - All confirmations use styled SUI dialogs — no `window.confirm()` calls
 - `prefers-reduced-motion` respected (SUI sets all transitions to 0ms)
 - `prefers-color-scheme: dark` auto-detection
@@ -296,6 +299,22 @@ These are intentionally out of scope but are natural next-version features:
 ---
 
 ## Changelog
+
+### v6.0 — 2025-02-23 — SUI 3.1.1 Upgrade
+- Upgraded Speyer UI from 2.4.1 to 3.1.1
+- Table of contents: custom panel/backdrop replaced with `sui-panel` + `SUI.panel` API (gains focus trap, scroll lock, focus restoration, reduced motion support, ARIA management)
+- Share button: custom dropdown replaced with `sui-dropdown` + `SUI.dropdown` API
+- Library header layout: inline styles replaced with `sui-flex sui-flex-nowrap sui-items-center sui-gap-2` utilities
+- Fixed `--sui-surface-alt` → `--sui-bg-elevated` (token that didn't exist in 3.1.1)
+- Removed ~45 lines of custom CSS and ~10 lines of custom JS
+- Offline bar: only shows in standalone PWA mode with real connectivity check (prevents false positives on desktop)
+- Inline SVG sprite retained (35 icons, ~5KB) for zero-latency offline rendering
+- Cache version bumped to smmr-v6.0
+
+### v5.3
+- Fixed offline bar false positives on desktop (dual-check: standalone mode + fetch probe)
+- Share button: replaced auto-download with dropdown menu (copy, save, share)
+- Fixed iPhone layout: theme toggle and import button stacking (now side-by-side)
 
 ### v5.2 — 2025-02-16
 - Added version shield in app footer for at-a-glance cache verification

@@ -9,14 +9,14 @@
 <meta name="apple-mobile-web-app-title" content="MD Reader"/>
 <meta name="theme-color" content="#2563EB"/>
 <meta name="description" content="A beautiful, offline-first Markdown reader and editor for iPhone and iPad."/>
-<title>Super Mobile Markdown Reader</title>
+<title>Super Markdown Mobile Reader</title>
 <link rel="manifest" href="manifest.json"/>
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 
 <!-- Speyer UI System -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.4.1/sui-tokens.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.4.1/sui-components.min.css"/>
-<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@2.4.1/sui.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui-tokens.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui-components.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui.min.js"></script>
 
 <!-- Markdown + Sanitizer -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
@@ -103,7 +103,7 @@ body {
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
   overflow: hidden; margin-bottom: var(--sui-space-1);
 }
-/* Document metadata — uses sui-meta from SUI 2.1 */
+/* Document metadata — uses sui-meta from SUI */
 
 .doc-card-actions { display: flex; flex-direction: column; gap: var(--sui-space-1); flex-shrink: 0; }
 .doc-action-btn {
@@ -188,7 +188,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   gap: var(--sui-space-2); align-items: center;
 }
 .editor-bar.active { display: flex; }
-/* Editor toolbar — uses sui-toolbar from SUI 2.1 */
+/* Editor toolbar — uses sui-toolbar from SUI */
 .editor-toolbar { display: none; }
 .editor-toolbar.active { display: flex; }
 .find-bar {
@@ -197,7 +197,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   gap: var(--sui-space-1); align-items: center;
 }
 .find-bar.active { display: flex; }
-/* Find highlights — uses sui-mark / sui-mark-current from SUI 2.1 */
+/* Find highlights — uses sui-mark / sui-mark-current from SUI */
 .editor-container { display: none; flex: 1; flex-direction: column; overflow: hidden; }
 .editor-container.active { display: flex; }
 .editor-textarea {
@@ -209,27 +209,21 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 }
 
 /* ============================================================
-   TOC PANEL
+   APP SHELL — multi-screen override
+   SUI 3.1.1 keeps the first .sui-screen always visible to prevent
+   blank pages in single-screen apps. We need all screens hidden
+   unless explicitly active.
    ============================================================ */
-.toc-backdrop {
-  position: fixed; inset: 0; background: rgba(15,23,42,0.3);
-  z-index: var(--sui-z-modal); display: none;
-}
-.toc-backdrop.is-open { display: block; }
-.toc-panel {
-  position: fixed; top: 0; right: 0; width: 300px; max-width: 85vw;
-  height: 100%; background: var(--sui-bg-card); border-left: 1px solid var(--sui-border);
-  z-index: calc(var(--sui-z-modal) + 1); transform: translateX(100%);
-  transition: transform 0.25s var(--sui-easing); display: flex; flex-direction: column;
-}
-.toc-panel.is-open { transform: translateX(0); }
-.toc-header {
-  padding: var(--sui-space-3) var(--sui-space-4);
+.sui-screen:not(.is-active) { display: none; }
+
+/* ============================================================
+   TOC PANEL — uses sui-panel from SUI
+   Custom: toc-item layout and edit button
+   ============================================================ */
+#tocPanel { --sui-panel-width: 300px; }
+#tocPanel .sui-panel-header {
   padding-top: calc(var(--sui-space-3) + env(safe-area-inset-top, 0));
-  border-bottom: 1px solid var(--sui-border);
-  display: flex; align-items: center; justify-content: space-between;
 }
-.toc-list { flex: 1; overflow-y: auto; padding: var(--sui-space-2); }
 .toc-item {
   display: flex; align-items: center; width: 100%;
   padding: var(--sui-space-2) var(--sui-space-3);
@@ -309,7 +303,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   display: inline-block;
   font-size: 10px; font-weight: 600; letter-spacing: 0.02em;
   padding: 1px 6px; border-radius: var(--sui-radius-full);
-  background: var(--sui-surface-alt); color: var(--sui-text-muted);
+  background: var(--sui-bg-elevated); color: var(--sui-text-muted);
 }
 
 /* ============================================================
@@ -353,7 +347,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
    ============================================================ */
 @media print {
   body { overflow: visible; background: #fff; }
-  .library-header, .reader-header, .toc-panel, .toc-backdrop, .sui-sheet,
+  .library-header, .reader-header, .sui-panel, .sui-sheet,
   .back-to-top, .offline-bar, dialog,
   .app-footer, .editor-bar, .editor-toolbar, .find-bar, .editor-container, .sui-toast-container, #update-toast { display: none !important; }
   .sui-screen { display: flex !important; height: auto !important; overflow: visible !important; }
@@ -422,8 +416,8 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <div class="sui-screen is-active" id="libraryScreen">
   <div class="library-header sui-screen-header">
     <div class="library-title-row">
-      <h1 class="library-title">Super MD Reader</h1>
-      <div class="sui-flex sui-gap-2">
+      <h1 class="library-title">SMMR</h1>
+      <div class="sui-flex sui-flex-nowrap sui-items-center sui-gap-2">
         <button class="sui-btn sui-btn-ghost sui-btn-sm" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
           <svg class="icon"><use href="#i-sun-moon"/></svg>
         </button>
@@ -455,7 +449,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v5.5</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.0</span></div>
 </div>
 
 <!-- ============================================================
@@ -482,9 +476,16 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-ghost sui-btn-sm" id="tocBtn" title="Table of Contents" aria-label="Table of Contents">
       <svg class="icon"><use href="#i-list"/></svg>
     </button>
-    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="shareBtn" title="Share" aria-label="Share">
-      <svg class="icon"><use href="#i-share"/></svg>
-    </button>
+    <div class="sui-dropdown" id="shareWrap">
+      <button class="sui-btn sui-btn-ghost sui-btn-sm" id="shareBtn" title="Share" aria-label="Share">
+        <svg class="icon"><use href="#i-share"/></svg>
+      </button>
+      <div class="sui-dropdown-menu sui-dropdown-menu-right">
+        <button class="sui-dropdown-item" id="shareCopyBtn"><svg class="icon icon-sm"><use href="#i-clipboard"/></svg> Copy to Clipboard</button>
+        <button class="sui-dropdown-item" id="shareSaveBtn"><svg class="icon icon-sm"><use href="#i-download"/></svg> Save as File</button>
+        <button class="sui-dropdown-item" id="shareNativeBtn" style="display:none;"><svg class="icon icon-sm"><use href="#i-share"/></svg> Share…</button>
+      </div>
+    </div>
   </div>
 
   <div class="editor-bar" id="editorBar">
@@ -534,13 +535,14 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <!-- ============================================================
      TOC PANEL
      ============================================================ -->
-<div class="toc-backdrop" id="tocBackdrop"></div>
-<div class="toc-panel" id="tocPanel">
-  <div class="toc-header">
-    <h3 style="font-size:var(--sui-text-body); font-weight:var(--sui-weight-bold);">Contents</h3>
-    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="tocCloseBtn" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+<div class="sui-panel" id="tocPanel" aria-label="Table of Contents" aria-hidden="true">
+  <div>
+    <div class="sui-panel-header">
+      <span class="sui-panel-title" style="font-size:var(--sui-text-body);">Contents</span>
+      <button class="sui-panel-close sui-btn sui-btn-ghost sui-btn-sm" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    </div>
+    <div class="sui-panel-body" id="tocList" style="padding:var(--sui-space-2);"></div>
   </div>
-  <div class="toc-list" id="tocList"></div>
 </div>
 
 <!-- ============================================================
@@ -597,7 +599,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <dialog class="sui-dialog import-dialog" id="importDialog">
   <div class="sui-modal-header">
     <h3 class="sui-modal-title">Import Document</h3>
-    <button class="sui-modal-close" id="importCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="importCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div class="sui-modal-body">
     <div class="import-sub active" id="importMain">
@@ -605,7 +607,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
         <svg class="icon icon-xl" style="color:var(--sui-blue-primary); margin-bottom:var(--sui-space-2);"><use href="#i-file-text"/></svg>
         <div style="font-weight:var(--sui-weight-semibold); margin-bottom:4px;">Drop .md files here</div>
         <div style="font-size:var(--sui-text-meta); color:var(--sui-text-muted); margin-bottom:var(--sui-space-3);">or</div>
-        <button class="sui-btn sui-btn-primary" id="importFileBtn"><svg class="icon"><use href="#i-plus"/></svg> Browse Files</button>
+        <button class="sui-btn sui-btn-primary" id="importFileBtn">Browse Files</button>
       </div>
       <button class="import-option" id="importPasteBtn">
         <div class="import-option-icon" style="background:var(--sui-success-soft); color:var(--sui-success);"><svg class="icon icon-lg"><use href="#i-clipboard"/></svg></div>
@@ -642,7 +644,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <dialog class="sui-dialog" id="deleteDialog" style="max-width:380px;">
   <div class="sui-modal-header">
     <h3 class="sui-modal-title">Remove Document</h3>
-    <button class="sui-modal-close" id="deleteCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="deleteCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div class="sui-modal-body">
     <div class="sui-alert sui-alert-error sui-mb-3">
@@ -663,7 +665,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <dialog class="sui-dialog" id="discardDialog" style="max-width:380px;">
   <div class="sui-modal-header">
     <h3 class="sui-modal-title">Unsaved Changes</h3>
-    <button class="sui-modal-close" id="discardCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="discardCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div class="sui-modal-body">
     <div class="sui-alert sui-alert-warning sui-mb-3">
@@ -862,7 +864,7 @@ function renderLibrary() {
             ${icon(doc.favorite ? 'star-filled' : 'star', 'icon-sm')}
           </button>
           ${showRemoveRecent
-            ? `<button class="doc-action-btn" data-remove-recent="${doc.id}" title="Clear from Recent" aria-label="Clear from Recent">${icon('clock', 'icon-sm')}</button>`
+            ? `<button class="doc-action-btn" data-remove-recent="${doc.id}" title="Clear from Recent" aria-label="Clear from Recent">${icon('trash', 'icon-sm')}</button>`
             : `<button class="doc-action-btn" data-del="${doc.id}" title="Remove" aria-label="Remove">${icon('trash', 'icon-sm')}</button>`
           }
         </div>
@@ -1067,24 +1069,30 @@ $('readerBackBtn').addEventListener('click', async () => {
   });
 });
 
-$('shareBtn').addEventListener('click', async () => {
+// Share dropdown (SUI auto-inits .sui-dropdown on DOMContentLoaded)
+if (navigator.share) $('shareNativeBtn').style.display = '';
+
+$('shareCopyBtn').addEventListener('click', () => {
   if (!currentDoc) return;
-  if (navigator.share) {
-    // On mobile/share-capable browsers: try sharing as a .md file
-    const fileName = (currentDoc.title || 'document').replace(/[^a-zA-Z0-9_\- ]/g, '') + '.md';
-    const file = new File([currentDoc.markdown], fileName, { type: 'text/markdown' });
-    try {
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-        await navigator.share({ title: currentDoc.title, files: [file] });
-      } else {
-        await navigator.share({ title: currentDoc.title, text: currentDoc.markdown.slice(0, 500) });
-      }
-    } catch (e) {
-      if (e.name !== 'AbortError') saveAsFile();
+  copyClip(currentDoc.markdown);
+  SUI.dropdown.close($('shareWrap'));
+});
+$('shareSaveBtn').addEventListener('click', () => {
+  saveAsFile();
+  SUI.dropdown.close($('shareWrap'));
+});
+$('shareNativeBtn').addEventListener('click', async () => {
+  if (!currentDoc) return;
+  SUI.dropdown.close($('shareWrap'));
+  const fileName = (currentDoc.title || 'document').replace(/[^a-zA-Z0-9_\- ]/g, '') + '.md';
+  const file = new File([currentDoc.markdown], fileName, { type: 'text/markdown' });
+  try {
+    if (navigator.canShare && navigator.canShare({ files: [file] })) {
+      await navigator.share({ title: currentDoc.title, files: [file] });
+    } else {
+      await navigator.share({ title: currentDoc.title, text: currentDoc.markdown.slice(0, 500) });
     }
-  } else {
-    saveAsFile();
-  }
+  } catch (e) { if (e.name !== 'AbortError') toast('Share cancelled', 'info'); }
 });
 function saveAsFile() {
   if (!currentDoc) return;
@@ -1111,7 +1119,7 @@ function enterEditMode() {
   $('editorBar').classList.add('active'); $('editorToolbar').classList.add('active'); $('editorContainer').classList.add('active');
   $('readerBody').style.display = 'none'; $('backToTopBtn').style.display = 'none';
   $('editToggleBtn').style.display = 'none'; $('tocBtn').style.display = 'none';
-  $('readerSettingsBtn').style.display = 'none'; $('shareBtn').style.display = 'none';
+  $('readerSettingsBtn').style.display = 'none'; $('shareWrap').style.display = 'none';
   $('findToggleBtn').style.display = 'none';
   $('editorTextarea').focus();
 }
@@ -1121,7 +1129,7 @@ function exitEditMode() {
   $('editorBar').classList.remove('active'); $('editorToolbar').classList.remove('active'); $('editorContainer').classList.remove('active');
   $('readerBody').style.display = ''; $('backToTopBtn').style.display = '';
   $('editToggleBtn').style.display = ''; $('tocBtn').style.display = '';
-  $('readerSettingsBtn').style.display = ''; $('shareBtn').style.display = '';
+  $('readerSettingsBtn').style.display = ''; $('shareWrap').style.display = '';
   $('findToggleBtn').style.display = '';
 }
 
@@ -1320,9 +1328,9 @@ $('editorSaveBtn').addEventListener('click', async () => {
 // ============================================================
 // TOC
 // ============================================================
-function openTOC() { $('tocBackdrop').classList.add('is-open'); $('tocPanel').classList.add('is-open'); }
-function closeTOC() { $('tocBackdrop').classList.remove('is-open'); $('tocPanel').classList.remove('is-open'); }
-$('tocBtn').addEventListener('click', openTOC); $('tocCloseBtn').addEventListener('click', closeTOC); $('tocBackdrop').addEventListener('click', closeTOC);
+function openTOC() { SUI.panel.open($('tocPanel')); }
+function closeTOC() { SUI.panel.close($('tocPanel')); }
+$('tocBtn').addEventListener('click', openTOC);
 
 // ============================================================
 // REMOVE CONFIRMATION DIALOG
@@ -1425,7 +1433,7 @@ document.addEventListener('keydown', e => {
   if ((e.metaKey || e.ctrlKey) && e.key === 'b' && isEditing) { e.preventDefault(); fmtActions.bold(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'i' && isEditing) { e.preventDefault(); fmtActions.italic(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'f' && !isEditing) { e.preventDefault(); $('findToggleBtn').click(); }
-  if (e.key === 'Escape') { if ($('findBar').classList.contains('active')) { closeFind(); return; } if (isEditing) { $('editorCancelBtn').click(); return; } closeTOC(); closeSettings(); }
+  if (e.key === 'Escape') { if ($('findBar').classList.contains('active')) { closeFind(); return; } if (isEditing) { $('editorCancelBtn').click(); return; } closeSettings(); }
 });
 
 // ============================================================

@@ -1,6 +1,6 @@
 {
-  "name": "Super Mobile Markdown Reader",
-  "short_name": "MD Reader",
+  "name": "Super Markdown Mobile Reader",
+  "short_name": "SMMR",
   "description": "A beautiful, offline-first Markdown reader and editor",
   "start_url": "/",
   "display": "standalone",

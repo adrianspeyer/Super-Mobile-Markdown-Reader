@@ -1402,14 +1402,19 @@ $('librarySearch').addEventListener('input', e => { searchQuery = e.target.value
 // ============================================================
 // OFFLINE
 // ============================================================
-function updateOnline() {
-  const offline = !navigator.onLine;
+const isStandalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone;
+async function updateOnline() {
+  if (!isStandalone) { $('offlineBar').classList.remove('show'); document.body.style.paddingTop = ''; return; }
+  let offline = !navigator.onLine;
+  if (!offline) {
+    try { await fetch('/manifest.json', { cache: 'no-store', method: 'HEAD' }); }
+    catch { offline = true; }
+  }
   $('offlineBar').classList.toggle('show', offline);
   document.body.style.paddingTop = offline ? $('offlineBar').offsetHeight + 'px' : '';
 }
 window.addEventListener('online', updateOnline);
 window.addEventListener('offline', updateOnline);
-// Delay initial check so DOM is fully laid out — avoids false positives on desktop
 setTimeout(updateOnline, 300);
 
 // ============================================================

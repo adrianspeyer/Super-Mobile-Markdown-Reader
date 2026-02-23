@@ -455,7 +455,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v5.3</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v5.4</span></div>
 </div>
 
 <!-- ============================================================
@@ -1069,9 +1069,33 @@ $('readerBackBtn').addEventListener('click', async () => {
 
 $('shareBtn').addEventListener('click', async () => {
   if (!currentDoc) return;
-  if (navigator.share) { try { await navigator.share({ title: currentDoc.title, text: currentDoc.markdown.slice(0, 500) }); } catch (e) { if (e.name !== 'AbortError') copyClip(currentDoc.markdown); } }
-  else copyClip(currentDoc.markdown);
+  if (navigator.share) {
+    // On mobile/share-capable browsers: try sharing as a .md file
+    const fileName = (currentDoc.title || 'document').replace(/[^a-zA-Z0-9_\- ]/g, '') + '.md';
+    const file = new File([currentDoc.markdown], fileName, { type: 'text/markdown' });
+    try {
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+        await navigator.share({ title: currentDoc.title, files: [file] });
+      } else {
+        await navigator.share({ title: currentDoc.title, text: currentDoc.markdown.slice(0, 500) });
+      }
+    } catch (e) {
+      if (e.name !== 'AbortError') saveAsFile();
+    }
+  } else {
+    saveAsFile();
+  }
 });
+function saveAsFile() {
+  if (!currentDoc) return;
+  const fileName = (currentDoc.title || 'document').replace(/[^a-zA-Z0-9_\- ]/g, '') + '.md';
+  const blob = new Blob([currentDoc.markdown], { type: 'text/markdown;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = fileName; document.body.appendChild(a); a.click();
+  document.body.removeChild(a); URL.revokeObjectURL(url);
+  toast('File saved', 'success');
+}
 async function copyClip(text) {
   if (typeof SUI !== 'undefined' && SUI.copy) { SUI.copy.text(text); toast('Copied to clipboard', 'success'); }
   else { try { await navigator.clipboard.writeText(text); toast('Copied to clipboard', 'success'); } catch { toast('Unable to copy', 'error'); } }
@@ -1378,8 +1402,15 @@ $('librarySearch').addEventListener('input', e => { searchQuery = e.target.value
 // ============================================================
 // OFFLINE
 // ============================================================
-function updateOnline() { $('offlineBar').classList.toggle('show', !navigator.onLine); }
-window.addEventListener('online', updateOnline); window.addEventListener('offline', updateOnline); updateOnline();
+function updateOnline() {
+  const offline = !navigator.onLine;
+  $('offlineBar').classList.toggle('show', offline);
+  document.body.style.paddingTop = offline ? $('offlineBar').offsetHeight + 'px' : '';
+}
+window.addEventListener('online', updateOnline);
+window.addEventListener('offline', updateOnline);
+// Delay initial check so DOM is fully laid out — avoids false positives on desktop
+setTimeout(updateOnline, 300);
 
 // ============================================================
 // KEYBOARD SHORTCUTS

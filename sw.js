@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smmr-v5.3'; // Bumped version
+const CACHE_NAME = 'smmr-v5.4'; // Bumped version
 const PRECACHE_URLS = [
   '/',
   '/index.html',

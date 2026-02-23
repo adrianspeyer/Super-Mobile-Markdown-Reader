@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smmr-v6.0';
+const CACHE_NAME = 'smmr-v6.1';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -6,9 +6,9 @@ const PRECACHE_URLS = [
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
-  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui-tokens.min.css',
-  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui-components.min.css',
-  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui.min.js',
+  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.2.0/sui-tokens.min.css',
+  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.2.0/sui-components.min.css',
+  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.2.0/sui.min.js',
   'https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js',
   'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js',
   'https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap'

@@ -14,9 +14,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 
 <!-- Speyer UI System -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui-tokens.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui-components.min.css"/>
-<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.1.1/sui.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.2.0/sui-tokens.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.2.0/sui-components.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.2.0/sui.min.js"></script>
 
 <!-- Markdown + Sanitizer -->
 <script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
@@ -207,14 +207,6 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   line-height: 1.6; padding: var(--sui-space-3) var(--sui-space-4);
   -webkit-overflow-scrolling: touch;
 }
-
-/* ============================================================
-   APP SHELL — multi-screen override
-   SUI 3.1.1 keeps the first .sui-screen always visible to prevent
-   blank pages in single-screen apps. We need all screens hidden
-   unless explicitly active.
-   ============================================================ */
-.sui-screen:not(.is-active) { display: none; }
 
 /* ============================================================
    TOC PANEL — uses sui-panel from SUI
@@ -413,6 +405,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <!-- ============================================================
      SCREEN 1: LIBRARY
      ============================================================ -->
+<div data-sui-screens>
 <div class="sui-screen is-active" id="libraryScreen">
   <div class="library-header sui-screen-header">
     <div class="library-title-row">
@@ -449,7 +442,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.0</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.1</span></div>
 </div>
 
 <!-- ============================================================
@@ -531,6 +524,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <svg class="icon"><use href="#i-arrow-up"/></svg>
   </button>
 </div>
+</div><!-- /data-sui-screens -->
 
 <!-- ============================================================
      TOC PANEL
@@ -599,7 +593,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <dialog class="sui-dialog import-dialog" id="importDialog">
   <div class="sui-modal-header">
     <h3 class="sui-modal-title">Import Document</h3>
-    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="importCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    <button class="sui-modal-close" id="importCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div class="sui-modal-body">
     <div class="import-sub active" id="importMain">
@@ -644,7 +638,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <dialog class="sui-dialog" id="deleteDialog" style="max-width:380px;">
   <div class="sui-modal-header">
     <h3 class="sui-modal-title">Remove Document</h3>
-    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="deleteCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    <button class="sui-modal-close" id="deleteCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div class="sui-modal-body">
     <div class="sui-alert sui-alert-error sui-mb-3">
@@ -665,7 +659,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <dialog class="sui-dialog" id="discardDialog" style="max-width:380px;">
   <div class="sui-modal-header">
     <h3 class="sui-modal-title">Unsaved Changes</h3>
-    <button class="sui-btn sui-btn-ghost sui-btn-sm" id="discardCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+    <button class="sui-modal-close" id="discardCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
   </div>
   <div class="sui-modal-body">
     <div class="sui-alert sui-alert-warning sui-mb-3">

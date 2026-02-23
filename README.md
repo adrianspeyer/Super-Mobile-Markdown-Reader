@@ -2,7 +2,7 @@
 
 A beautiful, offline-first Markdown reader and editor built for iPhone and iPad. Reading-first (70%), editing when you need it (30%).
 
-**[Live Demo →](#)** · Built with [Speyer UI v3.1.1](https://github.com/adrianspeyer/speyer-ui)
+**[Live Demo →](#)** · Built with [Speyer UI v3.2.0](https://github.com/adrianspeyer/speyer-ui)
 
 ---
 
@@ -108,7 +108,7 @@ Press Enter to advance, Shift+Enter to go back, Escape to close. The find bar sh
 
 ## Design System
 
-Built on [Speyer UI (SUI) v3.1.1](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
+Built on [Speyer UI (SUI) v3.2.0](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
 
 | SUI Component | Usage |
 |---|---|
@@ -299,6 +299,14 @@ These are intentionally out of scope but are natural next-version features:
 ---
 
 ## Changelog
+
+### v6.1 — 2025-02-23 — SUI 3.2.0 Upgrade
+- Upgraded Speyer UI from 3.1.1 to 3.2.0
+- Removed `.sui-screen:not(.is-active)` CSS workaround — replaced with `data-sui-screens` wrapper (SUI 3.2.0 native multi-screen support)
+- Restored `sui-modal-close` on dialog X buttons (SUI 3.2.0 detects native `showModal()` and skips SUI teardown)
+- SUI 3.2.0 idempotency guards eliminate dropdown double-init issue
+- SUI 3.2.0 scoped dropdown click handler replaces global document listener
+- Cache version bumped to smmr-v6.1
 
 ### v6.0 — 2025-02-23 — SUI 3.1.1 Upgrade
 - Upgraded Speyer UI from 2.4.1 to 3.1.1

@@ -2,7 +2,7 @@
 
 A beautiful, offline-first Markdown reader and editor built for iPhone and iPad. Reading-first (70%), editing when you need it (30%).
 
-**[Live Demo →](#)** · Built with [Speyer UI v3.2.0](https://github.com/adrianspeyer/speyer-ui)
+**[Live Demo →](#)** · Built with [Speyer UI v3.3.0](https://github.com/adrianspeyer/speyer-ui)
 
 ---
 
@@ -108,7 +108,7 @@ Press Enter to advance, Shift+Enter to go back, Escape to close. The find bar sh
 
 ## Design System
 
-Built on [Speyer UI (SUI) v3.2.0](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
+Built on [Speyer UI (SUI) v3.3.0](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
 
 | SUI Component | Usage |
 |---|---|

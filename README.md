@@ -18,6 +18,7 @@ Import Markdown documents, read them in a clean serif-typeset view, and make qui
 - **Import** — From files (.md, .txt) with drag-and-drop support, paste from clipboard, or fetch from a URL
 - **Offline** — Service worker caches the app shell; IndexedDB stores your documents. Works without internet
 - **Share** — Dropdown menu with copy to clipboard, save as file, and native Web Share API (iOS)
+- **Onboarding Tour** — First-visit product walkthrough powered by [Speyer Tour v3.0.0](https://github.com/adrianspeyer/speyer-tour). Replay any time from the About dropdown
 
 ---
 
@@ -42,12 +43,14 @@ Open `localhost:8000` in Safari → Add to Home Screen.
 
 ### Option 3: Drop the files anywhere
 
-The app is four files. Put them on any static host:
+The core app is a few files. Put them on any static host:
 
 ```
-index.html          ← The entire app (single file, ~78KB)
+index.html          ← The entire app (single file, ~88KB)
 sw.js               ← Service worker for offline
+netlify.toml        ← Security headers (Netlify only)
 manifest.json       ← PWA manifest
+src/                ← Speyer Tour (JS + CSS)
 icons/              ← App icons (192, 512, apple-touch-icon, favicon)
 ```
 
@@ -123,7 +126,7 @@ Built on [Speyer UI (SUI) v3.3.0](https://github.com/adrianspeyer/speyer-ui) —
 | `sui-dialog` (native `<dialog>`) | Import modal, remove confirmation, discard confirmation |
 | `sui-sheet` + `SUI.sheet` | Reader settings panel, section editing (bottom sheets) |
 | `sui-panel` + `SUI.panel` | Table of contents slide-over (v6.0 — replaces custom TOC panel) |
-| `sui-dropdown` + `SUI.dropdown` | Share menu with copy/save/share options (v6.0) |
+| `sui-dropdown` + `SUI.dropdown` | Share menu (copy/save/share), About SMMR dropdown with tour replay (v6.2) |
 | `sui-segmented` + `sui-segment` | Font, width, theme toggles in settings |
 | `sui-dropzone` | File import drag-and-drop area |
 | `sui-alert` | Remove and discard confirmation warnings |
@@ -138,7 +141,7 @@ Built on [Speyer UI (SUI) v3.3.0](https://github.com/adrianspeyer/speyer-ui) —
 
 ### Icons
 
-Uses an inline SVG sprite sheet (35 icons, ~5KB) instead of an external icon library. Zero HTTP requests, guaranteed offline, no `createIcons()` re-rendering needed.
+Uses an inline SVG sprite sheet (36 icons, ~5KB) instead of an external icon library. Zero HTTP requests, guaranteed offline, no `createIcons()` re-rendering needed.
 
 Usage in HTML:
 ```html
@@ -194,8 +197,8 @@ Note: `lastOpenedAt` is set to `null` when a document is removed from Recent. Do
 
 ### Rendering
 
-- [marked.js](https://marked.js.org/) for Markdown → HTML (GFM, breaks, header IDs)
-- [DOMPurify](https://github.com/cure53/DOMPurify) for sanitization (critical for URL-fetched content)
+- [marked.js](https://marked.js.org/) v15 for Markdown → HTML (GFM, breaks)
+- [DOMPurify](https://github.com/cure53/DOMPurify) v3.2.4 for sanitisation (critical for URL-fetched content)
 - SUI `sui-prose` for content typography, with CSS custom property overrides for user-adjustable font family and sizing
 
 ### Dependencies
@@ -205,8 +208,9 @@ Note: `lastOpenedAt` is set to `null` when a document is removed from Recent. Do
 | Speyer UI tokens | jsdelivr | 4KB | Design tokens |
 | Speyer UI components | jsdelivr | ~65KB | Component classes (includes sui-screen, sui-prose, sui-mark, sui-meta, sui-toolbar, sui-panel, sui-dropdown) |
 | Speyer UI JS | jsdelivr | ~26KB | Theme, toast, copy, modal, sheet, dropdown, panel, segmented, accordion, tooltip |
-| marked.js | jsdelivr | 38KB | Markdown parsing |
-| DOMPurify | jsdelivr | 18KB | HTML sanitization |
+| marked.js v15.0.7 | jsdelivr | 38KB | Markdown parsing |
+| DOMPurify v3.2.4 | jsdelivr | 18KB | HTML sanitisation |
+| Speyer Tour v3.0.0 | local | ~28KB (JS) + ~18KB (CSS) | Onboarding product tour |
 | Newsreader font | Google Fonts | ~25KB | Reading typography |
 
 Zero npm dependencies. Zero build tools.
@@ -259,7 +263,11 @@ This app is specifically designed around iOS PWA limitations:
 ```
 ├── index.html              ← Complete app (HTML + CSS + JS, single file)
 ├── sw.js                   ← Service worker
+├── netlify.toml            ← CSP + security headers (v6.2)
 ├── manifest.json           ← PWA manifest
+├── src/
+│   ├── speyer-tour.js      ← Onboarding tour (v3.0.0)
+│   └── speyer-tour.css     ← Tour styles
 ├── icons.svg               ← SVG sprite sheet (standalone reference copy)
 ├── icon-192.png            ← PWA icon
 ├── icon-512.png            ← PWA icon (maskable)
@@ -299,6 +307,31 @@ These are intentionally out of scope but are natural next-version features:
 ---
 
 ## Changelog
+
+### v6.2 — 2026-02-24 — Security Hardening + Onboarding Tour
+
+**Security (critical):**
+- Upgraded DOMPurify 3.0.6 → 3.2.4 (patches CVE-2024-45801 and CVE-2024-47875 — mXSS bypasses)
+- Upgraded marked 9.1.6 → 15.0.7 (ReDoS hardening; v15 removes heading IDs by default, eliminating DOM clobbering vector)
+- Migrated `marked.setOptions()` → `marked.use()` for v15 API compatibility
+
+**Security (high):**
+- Added URL validation (`isAllowedUrl()`) — blocks localhost, private IPs, and non-https protocols (SSRF mitigation)
+- Escaped `doc.id` in all `data-*` attributes via `escapeHtml()` (4 instances in library rendering)
+- Sanitised error messages — no raw `err.message` exposed in toast notifications
+- Fixed CDN paths — added missing `dist/` prefix to all SUI URLs; added `defer` on SUI JS
+
+**Security (infrastructure):**
+- Rewrote service worker — origin whitelist (`ALLOWED_CACHE_ORIGINS`) prevents caching of arbitrary cross-origin user-fetched URLs
+- Added `netlify.toml` with Content-Security-Policy, X-Content-Type-Options (nosniff), X-Frame-Options (DENY), and Referrer-Policy headers
+- Added theme flash fix — inline `<script>` in `<head>` applies dark mode before stylesheets load
+
+**Features:**
+- Onboarding tour powered by Speyer Tour v3.0.0 — 6-step first-visit walkthrough with localStorage one-shot
+- About dropdown (ℹ️ button) replaces standalone replay button — contains app description + "Replay tour" action. Saves a button slot in the header at 375px
+- Added `i-repeat` icon to inline SVG sprite (36 icons total)
+
+- Cache version bumped to smmr-v6.2
 
 ### v6.1 — 2025-02-23 — SUI 3.2.0 Upgrade
 - Upgraded Speyer UI from 3.1.1 to 3.2.0

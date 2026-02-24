@@ -2,6 +2,7 @@
 <html lang="en" data-theme="light">
 <head>
 <meta charset="utf-8"/>
+<script>try{const s=JSON.parse(localStorage.getItem('smmr_settings'));if(s&&s.theme==='dark')document.documentElement.setAttribute('data-theme','dark')}catch{}</script>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover"/>
 <meta name="mobile-web-app-capable" content="yes"/>
 <meta name="apple-mobile-web-app-capable" content="yes"/>
@@ -14,16 +15,19 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 
 <!-- Speyer UI System -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/sui-tokens.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/sui-components.min.css"/>
-<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/sui.min.js"></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/dist/sui-tokens.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/dist/sui-components.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/dist/sui.min.js" defer></script>
 
-<!-- Markdown + Sanitizer -->
-<script src="https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js"></script>
+<!-- Markdown + Sanitizer (updated for security patches) -->
+<script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js"></script>
 
 <!-- Reading font -->
 <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap" rel="stylesheet"/>
+
+<!-- Speyer Tour (onboarding overlay) — load after SUI tokens -->
+<link rel="stylesheet" href="./src/speyer-tour.css"/>
 
 <style>
 /* ============================================================
@@ -386,6 +390,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   <symbol id="i-alert-triangle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></symbol>
   <symbol id="i-alert-circle" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></symbol>
   <symbol id="i-loader" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="12" y1="2" x2="12" y2="6"/><line x1="12" y1="18" x2="12" y2="22"/><line x1="4.93" y1="4.93" x2="7.76" y2="7.76"/><line x1="16.24" y1="16.24" x2="19.07" y2="19.07"/><line x1="2" y1="12" x2="6" y2="12"/><line x1="18" y1="12" x2="22" y2="12"/><line x1="4.93" y1="19.07" x2="7.76" y2="16.24"/><line x1="16.24" y1="7.76" x2="19.07" y2="4.93"/></symbol>
+  <symbol id="i-repeat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="17 1 21 5 17 9"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><polyline points="7 23 3 19 7 15"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></symbol>
   <!-- Editor toolbar icons -->
   <symbol id="i-bold" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 4h8a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/><path d="M6 12h9a4 4 0 0 1 4 4 4 4 0 0 1-4 4H6z"/></symbol>
   <symbol id="i-italic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="19" y1="4" x2="10" y2="4"/><line x1="14" y1="20" x2="5" y2="20"/><line x1="15" y1="4" x2="9" y2="20"/></symbol>
@@ -411,6 +416,15 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <div class="library-title-row">
       <h1 class="library-title">SMMR</h1>
       <div class="sui-flex sui-flex-nowrap sui-items-center sui-gap-2">
+        <div class="sui-dropdown" id="aboutWrap">
+          <button class="sui-btn sui-btn-ghost sui-btn-sm" id="aboutBtn" title="About SMMR" aria-label="About SMMR" aria-haspopup="true">
+            <svg class="icon icon-sm"><use href="#i-info"/></svg>
+          </button>
+          <div class="sui-dropdown-menu sui-dropdown-menu-right" style="min-width:240px; padding:var(--sui-space-3, 12px);">
+            <p style="margin:0 0 8px; font-size:13px; color:var(--sui-text-secondary, #475569);">Super Markdown Mobile Reader — a beautiful, offline-first reader and editor. Works on any device, no internet needed.</p>
+            <button class="sui-dropdown-item" id="tourReplayBtn"><svg class="icon icon-sm"><use href="#i-repeat"/></svg> Replay tour</button>
+          </div>
+        </div>
         <button class="sui-btn sui-btn-ghost sui-btn-sm" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
           <svg class="icon"><use href="#i-sun-moon"/></svg>
         </button>
@@ -442,7 +456,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.1</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.2</span></div>
 </div>
 
 <!-- ============================================================
@@ -762,6 +776,18 @@ function extractPreview(md) {
 function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
 function wordCount(md) { return (md.match(/\b\w+\b/g) || []).length; }
 
+function isAllowedUrl(urlStr) {
+  try {
+    const url = new URL(urlStr);
+    if (!['http:', 'https:'].includes(url.protocol)) return false;
+    const host = url.hostname.toLowerCase();
+    if (host === 'localhost' || host === '0.0.0.0' || host.startsWith('127.') ||
+        host.startsWith('192.168.') || host.startsWith('10.') ||
+        /^172\.(1[6-9]|2\d|3[01])\./.test(host) || host.endsWith('.local')) return false;
+    return true;
+  } catch { return false; }
+}
+
 // ============================================================
 // INDEXED DB
 // ============================================================
@@ -793,7 +819,7 @@ const dbGetAll = () => new Promise((res, rej) => { const tx = db.transaction('do
 // MARKDOWN
 // ============================================================
 function renderMD(md) {
-  marked.setOptions({ gfm: true, breaks: true, headerIds: true, mangle: false });
+  marked.use({ gfm: true, breaks: true });
   return DOMPurify.sanitize(marked.parse(md), { ADD_TAGS: ['input'], ADD_ATTR: ['type', 'checked', 'disabled'] });
 }
 
@@ -846,7 +872,7 @@ function renderLibrary() {
     const wc = wordCount(doc.markdown || '');
     const showRemoveRecent = currentTab === 'recent';
     return `
-      <div class="doc-card" data-id="${doc.id}">
+      <div class="doc-card" data-id="${escapeHtml(doc.id)}">
         <div class="doc-icon ${srcClass}">${icon(srcIcon)}</div>
         <div class="doc-info">
           <div class="doc-title">${escapeHtml(doc.title)}</div>
@@ -854,12 +880,12 @@ function renderLibrary() {
           <div class="sui-meta"><span>${timeAgo(doc.lastOpenedAt || doc.createdAt)}</span><span>${Math.max(1, Math.ceil(wc / 238))} min read</span><span>${wc.toLocaleString()} words</span></div>
         </div>
         <div class="doc-card-actions">
-          <button class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${doc.id}" title="Favorite" aria-label="Toggle favorite">
+          <button class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${escapeHtml(doc.id)}" title="Favorite" aria-label="Toggle favorite">
             ${icon(doc.favorite ? 'star-filled' : 'star', 'icon-sm')}
           </button>
           ${showRemoveRecent
-            ? `<button class="doc-action-btn" data-remove-recent="${doc.id}" title="Clear from Recent" aria-label="Clear from Recent">${icon('trash', 'icon-sm')}</button>`
-            : `<button class="doc-action-btn" data-del="${doc.id}" title="Remove" aria-label="Remove">${icon('trash', 'icon-sm')}</button>`
+            ? `<button class="doc-action-btn" data-remove-recent="${escapeHtml(doc.id)}" title="Clear from Recent" aria-label="Clear from Recent">${icon('trash', 'icon-sm')}</button>`
+            : `<button class="doc-action-btn" data-del="${escapeHtml(doc.id)}" title="Remove" aria-label="Remove">${icon('trash', 'icon-sm')}</button>`
           }
         </div>
       </div>`;
@@ -924,12 +950,13 @@ $('pasteSaveBtn').addEventListener('click', async () => {
 
 $('urlFetchBtn').addEventListener('click', async () => {
   const url = $('urlInput').value.trim(); if (!url) { toast('Please enter a URL', 'warning'); return; }
+  if (!isAllowedUrl(url)) { toast('Please enter a valid public https:// URL', 'warning'); return; }
   $('urlFetchBtn').disabled = true; $('urlFetchBtn').innerHTML = `${icon('loader', 'icon-spin')} Fetching...`;
   try {
     const resp = await fetch(url); if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
     const md = await resp.text(); closeImportModal();
     const doc = await saveDoc(md, 'url', url); toast('Document fetched & saved', 'success'); openDocument(doc.id);
-  } catch (err) { toast(`Failed: ${err.message}`, 'error'); }
+  } catch (err) { console.error('Fetch error:', err); toast('Failed to fetch document. Check the URL and try again.', 'error'); }
   finally { $('urlFetchBtn').disabled = false; $('urlFetchBtn').innerHTML = `${icon('download')} Fetch & Read`; }
 });
 
@@ -1495,11 +1522,69 @@ function showUpdateToast(worker) {
 
 async function init() {
   try { await openDB(); applyAllSettings(); await loadLibrary(); }
-  catch (err) { console.error('Init error:', err); toast('Failed to initialize. Please refresh.', 'error'); }
+  catch (err) { console.error('Init error:', err); toast('Failed to initialise. Please refresh.', 'error'); }
 }
 init();
 
 })();
+</script>
+
+<!-- ============================================================
+     SPEYER TOUR v3.0.0 — First-visit onboarding
+     ============================================================ -->
+<script type="module">
+import { SpeyerTour } from './src/speyer-tour.js';
+
+const tour = new SpeyerTour({
+  tourId: 'smmr-welcome-v6.2',
+  padding: 10,
+  allowClose: true,
+
+  steps: [
+    {
+      target:  null,
+      title:   'Welcome to SMMR',
+      content: 'Super Markdown Mobile Reader — a beautiful, offline-first Markdown reader and editor. Works on your phone, tablet, or desktop. Let\u2019s take a quick look around.'
+    },
+    {
+      target:    '#importBtn',
+      title:     'Import Documents',
+      content:   'Drag and drop a .md file, paste Markdown from your clipboard, or fetch directly from a URL — like a raw GitHub file.',
+      placement: 'bottom'
+    },
+    {
+      target:    '#themeToggleBtn',
+      title:     'Light & Dark Mode',
+      content:   'Switch themes instantly. Your preference is saved and persists across sessions.',
+      placement: 'bottom'
+    },
+    {
+      target:  null,
+      title:   'Organise Your Library',
+      content: 'Once you have documents, you\u2019ll see tabs for Recent, Favourites, and All — plus a search bar to find anything instantly. Star your most-used docs for quick access.'
+    },
+    {
+      target:  null,
+      title:   'Powerful Reader',
+      content: 'Open any document to read beautifully rendered Markdown. Edit inline, adjust font size and style, browse the table of contents, find text, and share or export — all from the reader toolbar.'
+    },
+    {
+      target:  null,
+      title:   'Works Offline',
+      content: 'SMMR is a Progressive Web App. Install it to your home screen and your documents are always available — no internet needed. Happy reading!'
+    }
+  ],
+
+  onComplete: () => {
+    if (typeof SUI !== 'undefined' && SUI.toast) SUI.toast.success('Tour complete — enjoy SMMR!');
+  }
+});
+
+// Auto-start on first visit (respects localStorage)
+tour.start();
+
+// Replay button — defensive wiring (tour may not exist if module fails)
+document.getElementById('tourReplayBtn')?.addEventListener('click', () => tour.reset());
 </script>
 </body>
 </html>

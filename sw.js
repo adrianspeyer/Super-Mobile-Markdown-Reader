@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smmr-v6.1';
+const CACHE_NAME = 'smmr-v6.2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',
@@ -6,19 +6,30 @@ const PRECACHE_URLS = [
   '/icon-192.png',
   '/icon-512.png',
   '/apple-touch-icon.png',
-  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/sui-tokens.min.css',
-  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/sui-components.min.css',
-  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/sui.min.js',
-  'https://cdn.jsdelivr.net/npm/marked@9.1.6/marked.min.js',
-  'https://cdn.jsdelivr.net/npm/dompurify@3.0.6/dist/purify.min.js',
+  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/dist/sui-tokens.min.css',
+  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/dist/sui-components.min.css',
+  'https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.0/dist/sui.min.js',
+  'https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js',
+  'https://cdn.jsdelivr.net/npm/dompurify@3.2.4/dist/purify.min.js',
   'https://fonts.googleapis.com/css2?family=Newsreader:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&display=swap'
 ];
+
+// Only cache same-origin and known CDN resources
+const ALLOWED_CACHE_ORIGINS = [
+  self.location.origin,
+  'https://cdn.jsdelivr.net',
+  'https://fonts.googleapis.com',
+  'https://fonts.gstatic.com'
+];
+
+function isCacheableRequest(url) {
+  return ALLOWED_CACHE_ORIGINS.some(origin => url.startsWith(origin));
+}
 
 self.addEventListener('install', event => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(cache => cache.addAll(PRECACHE_URLS))
-      // REMOVED: self.skipWaiting() - We want to wait for user approval now
   );
 });
 
@@ -49,6 +60,9 @@ self.addEventListener('fetch', event => {
     );
     return;
   }
+
+  // Only cache known-safe origins (prevents caching user-fetched URLs)
+  if (!isCacheableRequest(event.request.url)) return;
 
   // Assets: Stale-while-revalidate
   event.respondWith(

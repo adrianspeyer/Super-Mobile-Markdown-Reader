@@ -294,7 +294,8 @@ These are intentionally out of scope but are natural next-version features:
 
 ## Accessibility
 
-- WCAG 2.1 AA via Speyer UI's token system and contrast-tested color pairs
+- WCAG 2.1 AA via Speyer UI's token system and contrast-tested colour pairs
+- `<main>` landmark wraps the app shell for screen reader navigation
 - All interactive elements have `aria-label` or visible text
 - Native `<dialog>` for modals (browser-managed focus trap, Escape, backdrop)
 - `sui-panel` for TOC (focus trap on mobile, focus restoration, Escape to close)
@@ -308,7 +309,7 @@ These are intentionally out of scope but are natural next-version features:
 
 ## Changelog
 
-### v6.2 — 2026-02-24 — Security Hardening + Onboarding Tour
+### v6.2.1 — 2026-02-24 — Security Hardening + Onboarding Tour
 
 **Security (critical):**
 - Upgraded DOMPurify 3.0.6 → 3.2.4 (patches CVE-2024-45801 and CVE-2024-47875 — mXSS bypasses)
@@ -330,8 +331,13 @@ These are intentionally out of scope but are natural next-version features:
 - Onboarding tour powered by Speyer Tour v3.0.0 — 6-step first-visit walkthrough with localStorage one-shot
 - About dropdown (ℹ️ button) replaces standalone replay button — contains app description + "Replay tour" action. Saves a button slot in the header at 375px
 - Added `i-repeat` icon to inline SVG sprite (36 icons total)
+- Added `<main>` landmark on `data-sui-screens` wrapper (axe/WCAG: "document must have one main landmark")
+- Fixed axe `aria-allowed-attr` violation — added `role="tablist"` / `role="tab"` on library tabs
+- Fixed axe `region` violation — moved update toast and offline bar inside `<main>` landmark
+- Added `role="alert"` on update toast, `role="status"` on offline bar
+- "Show tour on launch" toggle in About dropdown — persistent via localStorage
 
-- Cache version bumped to smmr-v6.2
+- Cache version bumped to smmr-v6.2.1
 
 ### v6.1 — 2025-02-23 — SUI 3.2.0 Upgrade
 - Upgraded Speyer UI from 3.1.1 to 3.2.0

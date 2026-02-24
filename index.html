@@ -355,12 +355,6 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 </head>
 <body>
 
-<!-- Update Toast Notification -->
-<div id="update-toast">
-  <span>Update available</span>
-  <button id="update-btn">Refresh</button>
-</div>
-
 <!-- ============================================================
      SVG SPRITE SHEET (inline, zero HTTP requests)
      ============================================================ -->
@@ -404,13 +398,20 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   <symbol id="i-menu" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="4" y1="6" x2="20" y2="6"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="18" x2="20" y2="18"/></symbol>
 </svg>
 
-<!-- Offline indicator -->
-<div class="offline-bar" id="offlineBar">You're offline — your documents are still available</div>
-
 <!-- ============================================================
      SCREEN 1: LIBRARY
      ============================================================ -->
 <main data-sui-screens>
+
+<!-- Update Toast Notification (inside main for landmark compliance) -->
+<div id="update-toast" role="alert">
+  <span>Update available</span>
+  <button id="update-btn">Refresh</button>
+</div>
+
+<!-- Offline indicator -->
+<div class="offline-bar" id="offlineBar" role="status">You're offline — your documents are still available</div>
+
 <div class="sui-screen is-active" id="libraryScreen">
   <div class="library-header sui-screen-header">
     <div class="library-title-row">
@@ -423,6 +424,10 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
           <div class="sui-dropdown-menu sui-dropdown-menu-right" style="min-width:240px; padding:var(--sui-space-3, 12px);">
             <p style="margin:0 0 8px; font-size:13px; color:var(--sui-text-secondary, #475569);">Super Markdown Mobile Reader — a beautiful, offline-first reader and editor. Works on any device, no internet needed.</p>
             <button class="sui-dropdown-item" id="tourReplayBtn"><svg class="icon icon-sm"><use href="#i-repeat"/></svg> Replay tour</button>
+            <label class="sui-dropdown-item" style="display:flex; align-items:center; justify-content:space-between; cursor:pointer;">
+              Show tour on launch
+              <input type="checkbox" id="tourToggle" style="margin:0;">
+            </label>
           </div>
         </div>
         <button class="sui-btn sui-btn-ghost sui-btn-sm" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
@@ -440,10 +445,10 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   </div>
 
   <div id="tabBar" style="padding: var(--sui-space-2) var(--sui-space-3); background: var(--sui-bg-card); border-bottom: 1px solid var(--sui-border);">
-    <nav class="sui-nav" style="width:100%;">
-      <button class="sui-tab" aria-selected="true" data-tab="recent"><span class="sui-tab-label">Recent</span></button>
-      <button class="sui-tab" aria-selected="false" data-tab="favorites"><svg class="icon icon-sm"><use href="#i-star"/></svg><span class="sui-tab-label">Favorites</span></button>
-      <button class="sui-tab" aria-selected="false" data-tab="all"><span class="sui-tab-label">All</span></button>
+    <nav class="sui-nav" style="width:100%;" role="tablist">
+      <button class="sui-tab" role="tab" aria-selected="true" data-tab="recent"><span class="sui-tab-label">Recent</span></button>
+      <button class="sui-tab" role="tab" aria-selected="false" data-tab="favorites"><svg class="icon icon-sm"><use href="#i-star"/></svg><span class="sui-tab-label">Favorites</span></button>
+      <button class="sui-tab" role="tab" aria-selected="false" data-tab="all"><span class="sui-tab-label">All</span></button>
     </nav>
   </div>
 
@@ -456,7 +461,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.2</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.2.1</span></div>
 </div>
 
 <!-- ============================================================
@@ -1583,8 +1588,32 @@ const tour = new SpeyerTour({
 // Auto-start on first visit (respects localStorage)
 tour.start();
 
-// Replay button — defensive wiring (tour may not exist if module fails)
-document.getElementById('tourReplayBtn')?.addEventListener('click', () => tour.reset());
+// Tour toggle — syncs with the same localStorage key the tour uses
+const TOUR_KEY = 'speyer_tour_smmr-welcome-v6.2';
+const tourToggle = document.getElementById('tourToggle');
+
+function syncTourToggle() {
+  if (tourToggle) tourToggle.checked = !localStorage.getItem(TOUR_KEY);
+}
+syncTourToggle();
+
+// Sync when dropdown opens (tour may have just completed)
+document.getElementById('aboutBtn')?.addEventListener('click', syncTourToggle);
+
+// Toggle: checked = show on next launch, unchecked = suppress
+tourToggle?.addEventListener('change', () => {
+  if (tourToggle.checked) {
+    localStorage.removeItem(TOUR_KEY);
+  } else {
+    localStorage.setItem(TOUR_KEY, 'completed');
+  }
+});
+
+// Replay button — clears flag and restarts
+document.getElementById('tourReplayBtn')?.addEventListener('click', () => {
+  tour.reset();
+  syncTourToggle();
+});
 </script>
 </body>
 </html>

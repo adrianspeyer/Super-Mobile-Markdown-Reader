@@ -244,6 +244,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 .toc-item:hover .toc-edit-btn { opacity: 1; }
 .toc-edit-btn:hover { background: var(--sui-bg-elevated); color: var(--sui-blue-primary); }
 @media (hover: none) { .toc-edit-btn { opacity: 1; } }
+@media (max-width: 480px) { #aboutWrap .sui-dropdown-menu { right: auto; left: 0; } }
 
 /* ============================================================
    SETTINGS — uses sui-sheet from SUI
@@ -428,6 +429,13 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
               Show tour on launch
               <input type="checkbox" id="tourToggle" style="margin:0;">
             </label>
+            <div class="sui-divider" style="margin:var(--sui-space-2) 0;"></div>
+            <div style="font-size:13px; color:var(--sui-text-secondary, #475569); margin-bottom:6px;">Default tab</div>
+            <div class="sui-segmented" id="defaultTabPicker" role="radiogroup" aria-label="Default tab" style="width:100%; font-size:13px;">
+              <button class="sui-segment" role="radio" data-default-tab="recent" aria-checked="true">Recent</button>
+              <button class="sui-segment" role="radio" data-default-tab="favorites" aria-checked="false">Favourites</button>
+              <button class="sui-segment" role="radio" data-default-tab="all" aria-checked="false">All</button>
+            </div>
           </div>
         </div>
         <button class="sui-btn sui-btn-ghost sui-btn-sm" id="themeToggleBtn" title="Toggle theme" aria-label="Toggle theme">
@@ -447,7 +455,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   <div id="tabBar" style="padding: var(--sui-space-2) var(--sui-space-3); background: var(--sui-bg-card); border-bottom: 1px solid var(--sui-border);">
     <nav class="sui-nav" style="width:100%;" role="tablist">
       <button class="sui-tab" role="tab" aria-selected="true" data-tab="recent"><span class="sui-tab-label">Recent</span></button>
-      <button class="sui-tab" role="tab" aria-selected="false" data-tab="favorites"><svg class="icon icon-sm"><use href="#i-star"/></svg><span class="sui-tab-label">Favorites</span></button>
+      <button class="sui-tab" role="tab" aria-selected="false" data-tab="favorites"><svg class="icon icon-sm"><use href="#i-star"/></svg><span class="sui-tab-label">Favourites</span></button>
       <button class="sui-tab" role="tab" aria-selected="false" data-tab="all"><span class="sui-tab-label">All</span></button>
     </nav>
   </div>
@@ -674,6 +682,27 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
   </div>
 </dialog>
 
+<!-- Bulk remove confirmation dialog -->
+<dialog class="sui-dialog" id="bulkRemoveDialog" style="max-width:380px;">
+  <div class="sui-modal-header">
+    <h3 class="sui-modal-title">Remove All Documents</h3>
+    <button class="sui-modal-close" id="bulkRemoveCloseX" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
+  </div>
+  <div class="sui-modal-body">
+    <div class="sui-alert sui-alert-error sui-mb-3">
+      <span class="sui-alert-icon" aria-hidden="true"><svg class="icon"><use href="#i-alert-triangle"/></svg></span>
+      <div class="sui-alert-content">
+        <div class="sui-alert-title">This cannot be undone</div>
+        <div id="bulkRemoveCount">All documents will be permanently removed.</div>
+      </div>
+    </div>
+  </div>
+  <div class="sui-modal-footer">
+    <button class="sui-btn sui-btn-ghost" id="bulkRemoveCancelBtn">Cancel</button>
+    <button class="sui-btn sui-btn-danger" id="bulkRemoveConfirmBtn"><svg class="icon"><use href="#i-trash"/></svg> Remove All</button>
+  </div>
+</dialog>
+
 <!-- Discard edits confirmation dialog -->
 <dialog class="sui-dialog" id="discardDialog" style="max-width:380px;">
   <div class="sui-modal-header">
@@ -833,7 +862,7 @@ function renderMD(md) {
 // ============================================================
 let allDocs = [], currentDoc = null, currentTab = 'recent', searchQuery = '';
 let isEditing = false, editSnapshot = '';
-let settings = { fontSize: 18, width: 'narrow', font: 'serif', theme: 'light' };
+let settings = { fontSize: 18, width: 'narrow', font: 'serif', theme: 'light', defaultTab: 'recent' };
 function loadSettings() { try { const s = localStorage.getItem('smmr_settings'); if (s) settings = { ...settings, ...JSON.parse(s) }; } catch {} }
 function saveSettings() { localStorage.setItem('smmr_settings', JSON.stringify(settings)); }
 
@@ -851,7 +880,8 @@ function renderLibrary() {
   const list = $('libraryList'), empty = $('emptyState');
   let docs = [...allDocs];
   if (currentTab === 'recent') {
-    docs = docs.filter(d => d.lastOpenedAt);
+    const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+    docs = docs.filter(d => d.lastOpenedAt && d.lastOpenedAt >= weekAgo);
     docs.sort((a, b) => new Date(b.lastOpenedAt) - new Date(a.lastOpenedAt));
   } else if (currentTab === 'favorites') {
     docs = docs.filter(d => d.favorite);
@@ -885,7 +915,7 @@ function renderLibrary() {
           <div class="sui-meta"><span>${timeAgo(doc.lastOpenedAt || doc.createdAt)}</span><span>${Math.max(1, Math.ceil(wc / 238))} min read</span><span>${wc.toLocaleString()} words</span></div>
         </div>
         <div class="doc-card-actions">
-          <button class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${escapeHtml(doc.id)}" title="Favorite" aria-label="Toggle favorite">
+          <button class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${escapeHtml(doc.id)}" title="Favourite" aria-label="Toggle favourite">
             ${icon(doc.favorite ? 'star-filled' : 'star', 'icon-sm')}
           </button>
           ${showRemoveRecent
@@ -896,6 +926,13 @@ function renderLibrary() {
       </div>`;
   }).join('');
 
+  // Bulk action button (Recent: clear all timestamps; All: remove all documents)
+  if (currentTab === 'recent' && docs.length > 0) {
+    list.innerHTML += '<div style="padding:var(--sui-space-3); text-align:center;"><button class="sui-btn sui-btn-ghost sui-btn-sm" id="clearAllRecentBtn"><svg class="icon icon-sm"><use href="#i-trash"/></svg> Clear All Recent</button></div>';
+  } else if (currentTab === 'all' && docs.length > 0) {
+    list.innerHTML += '<div style="padding:var(--sui-space-3); text-align:center;"><button class="sui-btn sui-btn-ghost sui-btn-sm" id="removeAllBtn" style="color:var(--sui-error);"><svg class="icon icon-sm"><use href="#i-trash"/></svg> Remove All</button></div>';
+  }
+
   // Events
   list.querySelectorAll('.doc-card').forEach(card => {
     card.addEventListener('click', e => { if (e.target.closest('.doc-action-btn')) return; openDocument(card.dataset.id); });
@@ -904,7 +941,7 @@ function renderLibrary() {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
       const doc = allDocs.find(d => d.id === btn.dataset.fav);
-      if (doc) { doc.favorite = !doc.favorite; doc.updatedAt = new Date().toISOString(); await dbPut(doc); renderLibrary(); toast(doc.favorite ? 'Added to favorites' : 'Removed from favorites', doc.favorite ? 'success' : 'info'); }
+      if (doc) { doc.favorite = !doc.favorite; doc.updatedAt = new Date().toISOString(); await dbPut(doc); renderLibrary(); toast(doc.favorite ? 'Added to favourites' : 'Removed from favourites', doc.favorite ? 'success' : 'info'); }
     });
   });
   list.querySelectorAll('[data-remove-recent]').forEach(btn => {
@@ -924,6 +961,23 @@ function renderLibrary() {
         $('deleteDialog').showModal();
       }
     });
+  });
+
+  // Bulk: Clear All Recent (non-destructive — nulls timestamps)
+  $('clearAllRecentBtn')?.addEventListener('click', async () => {
+    const now = new Date().toISOString();
+    for (const doc of allDocs) {
+      if (doc.lastOpenedAt) { doc.lastOpenedAt = null; doc.updatedAt = now; await dbPut(doc); }
+    }
+    renderLibrary();
+    toast('Cleared all recent', 'info');
+  });
+
+  // Bulk: Remove All (destructive — uses confirmation dialog)
+  $('removeAllBtn')?.addEventListener('click', () => {
+    if (allDocs.length === 0) return;
+    $('bulkRemoveCount').textContent = `All ${allDocs.length} document${allDocs.length !== 1 ? 's' : ''} will be permanently removed.`;
+    $('bulkRemoveDialog').showModal();
   });
 }
 
@@ -1362,6 +1416,15 @@ $('tocBtn').addEventListener('click', openTOC);
 // REMOVE CONFIRMATION DIALOG
 // ============================================================
 let pendingDeleteId = null;
+
+// iOS Safari can leave background content inert after showModal() closes.
+// This helper ensures full cleanup after any native dialog close.
+function cleanupAfterDialog() {
+  document.querySelectorAll('[inert]').forEach(el => el.removeAttribute('inert'));
+  document.body.style.overflow = '';
+}
+$$('dialog.sui-dialog').forEach(d => d.addEventListener('close', cleanupAfterDialog));
+
 $('deleteConfirmBtn').addEventListener('click', async () => {
   if (pendingDeleteId) {
     await dbDelete(pendingDeleteId);
@@ -1375,6 +1438,18 @@ $('deleteConfirmBtn').addEventListener('click', async () => {
 $('deleteCloseX').addEventListener('click', () => $('deleteDialog').close());
 $('deleteCancelBtn').addEventListener('click', () => $('deleteDialog').close());
 $('deleteDialog').addEventListener('click', e => { if (e.target === $('deleteDialog')) $('deleteDialog').close(); });
+
+// Bulk remove all documents
+$('bulkRemoveConfirmBtn').addEventListener('click', async () => {
+  for (const doc of allDocs) { await dbDelete(doc.id); }
+  allDocs = [];
+  $('bulkRemoveDialog').close();
+  renderLibrary();
+  toast('All documents removed', 'info');
+});
+$('bulkRemoveCloseX').addEventListener('click', () => $('bulkRemoveDialog').close());
+$('bulkRemoveCancelBtn').addEventListener('click', () => $('bulkRemoveDialog').close());
+$('bulkRemoveDialog').addEventListener('click', e => { if (e.target === $('bulkRemoveDialog')) $('bulkRemoveDialog').close(); });
 
 // ============================================================
 // SETTINGS — uses SUI.sheet from SUI
@@ -1430,8 +1505,22 @@ dz.addEventListener('drop', async e => {
 // ============================================================
 // TABS
 // ============================================================
-$$('.sui-tab').forEach(tab => tab.addEventListener('click', () => { $$('.sui-tab').forEach(t => t.setAttribute('aria-selected', 'false')); tab.setAttribute('aria-selected', 'true'); currentTab = tab.dataset.tab; renderLibrary(); }));
+function setActiveTab(tabName) {
+  currentTab = tabName;
+  $$('.sui-tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === tabName ? 'true' : 'false'));
+  renderLibrary();
+}
+
+$$('.sui-tab').forEach(tab => tab.addEventListener('click', () => setActiveTab(tab.dataset.tab)));
 $('librarySearch').addEventListener('input', e => { searchQuery = e.target.value.trim(); renderLibrary(); });
+
+// Default tab picker
+$$('[data-default-tab]').forEach(btn => btn.addEventListener('click', () => {
+  $$('[data-default-tab]').forEach(b => b.setAttribute('aria-checked', 'false'));
+  btn.setAttribute('aria-checked', 'true');
+  settings.defaultTab = btn.dataset.defaultTab;
+  saveSettings();
+}));
 
 // ============================================================
 // OFFLINE
@@ -1477,6 +1566,11 @@ function applyAllSettings() {
   const f = { serif: "'Newsreader', Georgia, serif", sans: "var(--sui-font-primary)", mono: "var(--sui-font-mono)" };
   document.documentElement.style.setProperty('--reader-font-family', f[settings.font] || f.serif);
   $$('[data-font]').forEach(b => b.setAttribute('aria-checked', b.dataset.font === settings.font ? 'true' : 'false'));
+  // Apply default tab
+  const tab = settings.defaultTab || 'recent';
+  currentTab = tab;
+  $$('.sui-tab').forEach(t => t.setAttribute('aria-selected', t.dataset.tab === tab ? 'true' : 'false'));
+  $$('[data-default-tab]').forEach(b => b.setAttribute('aria-checked', b.dataset.defaultTab === tab ? 'true' : 'false'));
 }
 
 // --- Robust Service Worker Update Flow ---
@@ -1541,7 +1635,7 @@ init();
 import { SpeyerTour } from './src/speyer-tour.js';
 
 const tour = new SpeyerTour({
-  tourId: 'smmr-welcome-v6.2',
+  tourId: 'smmr-welcome-v6.2.1',
   padding: 10,
   allowClose: true,
 
@@ -1564,9 +1658,15 @@ const tour = new SpeyerTour({
       placement: 'bottom'
     },
     {
+      target:    '#aboutBtn',
+      title:     'Preferences & Info',
+      content:   'Tap the info button to choose your default tab, replay this tour, or learn more about SMMR.',
+      placement: 'bottom'
+    },
+    {
       target:  null,
       title:   'Organise Your Library',
-      content: 'Once you have documents, you\u2019ll see tabs for Recent, Favourites, and All — plus a search bar to find anything instantly. Star your most-used docs for quick access.'
+      content: 'Once you have documents, you\u2019ll see tabs for Recent, Favourites, and All — plus a search bar to find anything instantly. Recent shows the last 7 days and clears itself automatically. Star your most-used docs for quick access.'
     },
     {
       target:  null,
@@ -1589,7 +1689,7 @@ const tour = new SpeyerTour({
 tour.start();
 
 // Tour toggle — syncs with the same localStorage key the tour uses
-const TOUR_KEY = 'speyer_tour_smmr-welcome-v6.2';
+const TOUR_KEY = 'speyer_tour_smmr-welcome-v6.2.1';
 const tourToggle = document.getElementById('tourToggle');
 
 function syncTourToggle() {

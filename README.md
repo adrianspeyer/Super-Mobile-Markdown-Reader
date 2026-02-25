@@ -10,7 +10,7 @@ A beautiful, offline-first Markdown reader and editor built for iPhone and iPad.
 
 Import Markdown documents, read them in a clean serif-typeset view, and make quick edits when needed. Everything stays on your device — no accounts, no cloud, no tracking.
 
-- **Library** — All your documents in one place with search, favorites, and recent/all tabs. Remove documents from Recent without deleting them; remove permanently from All or Favorites. Tabs and search hide automatically when the library is empty for a clean first-run experience
+- **Library** — All your documents in one place with search, favourites, and recent/all tabs. Recent auto-expires after 7 days. Pin your preferred default tab. Bulk clear recent or remove all documents. Tabs and search hide automatically when the library is empty for a clean first-run experience
 - **Reader** — Beautiful rendered Markdown with table of contents, adjustable font size, serif/sans/mono fonts, narrow/wide layout, light/dark themes, word count, and estimated read time
 - **Editor** — One tap to switch to a full editor with a visual formatting toolbar — Bold, Italic, Headings, Links, Images, Lists, Quotes, Code, and Horizontal Rules. Auto-closing pairs (`[`, `(`, `*`, `` ` ``) make mobile editing faster. No Markdown knowledge required
 - **Section Editing** — Tap the pencil icon next to any heading in the Table of Contents to edit just that section in a bottom sheet. Perfect for quick fixes on long documents without scrolling through the whole file
@@ -101,11 +101,11 @@ Press Enter to advance, Shift+Enter to go back, Escape to close. The find bar sh
 
 | Tab | Shows | Sort | Actions |
 |---|---|---|---|
-| Recent | Documents you've opened (excludes cleared) | Last opened, newest first | ⭐ Favorite, 🕐 Clear from Recent |
-| Favorites | Starred documents only | Last opened | ⭐ Unfavorite, 🗑 Remove |
-| All | Every document | Alphabetical by title | ⭐ Favorite, 🗑 Remove |
+| Recent | Documents opened within the last 7 days | Last opened, newest first | ⭐ Favourite, 🗑 Clear from Recent, Clear All Recent |
+| Favourites | Starred documents only | Last opened | ⭐ Unfavourite, 🗑 Remove |
+| All | Every document | Alphabetical by title | ⭐ Favourite, 🗑 Remove, Remove All |
 
-"Clear from Recent" clears the document's last-opened timestamp — it disappears from the Recent tab but remains in All and Favorites. Remove permanently removes the document.
+"Clear from Recent" clears the document's last-opened timestamp — it disappears from the Recent tab but remains in All and Favourites. Documents also drop off Recent automatically after 7 days. Remove permanently removes the document.
 
 ---
 
@@ -121,7 +121,7 @@ Built on [Speyer UI (SUI) v3.3.0](https://github.com/adrianspeyer/speyer-ui) —
 | `sui-meta` | Document metadata line with CSS dot separators |
 | `sui-toolbar` + `sui-toolbar-btn` + `sui-toolbar-sep` | Editor formatting toolbar with horizontal scroll |
 | `sui-btn` family | All buttons (primary, ghost, success, danger, sm, full) |
-| `sui-nav` + `sui-tab` | Library tabs (Recent, Favorites, All) |
+| `sui-nav` + `sui-tab` | Library tabs (Recent, Favourites, All) |
 | `sui-input`, `sui-input-group`, `sui-input-label` | Search, paste textarea, URL input |
 | `sui-dialog` (native `<dialog>`) | Import modal, remove confirmation, discard confirmation |
 | `sui-sheet` + `SUI.sheet` | Reader settings panel, section editing (bottom sheets) |
@@ -284,7 +284,7 @@ These are intentionally out of scope but are natural next-version features:
 - Library backup/export (JSON dump of IndexedDB)
 - Full-text search inside documents
 - Syntax highlighting for code blocks
-- Drag-to-reorder favorites
+- Drag-to-reorder favourites
 - Document folders/tags
 - Line height / letter spacing adjustments
 - Strikethrough, footnotes (GFM extensions)
@@ -302,7 +302,7 @@ These are intentionally out of scope but are natural next-version features:
 - All confirmations use styled SUI dialogs — no `window.confirm()` calls
 - `prefers-reduced-motion` respected (SUI sets all transitions to 0ms)
 - `prefers-color-scheme: dark` auto-detection
-- Status communicated by icon + text, never color alone (SUI principle)
+- Status communicated by icon + text, never colour alone (SUI principle)
 - Keyboard navigable (Tab, Enter/Space, Escape)
 
 ---
@@ -336,6 +336,10 @@ These are intentionally out of scope but are natural next-version features:
 - Fixed axe `region` violation — moved update toast and offline bar inside `<main>` landmark
 - Added `role="alert"` on update toast, `role="status"` on offline bar
 - "Show tour on launch" toggle in About dropdown — persistent via localStorage
+- Recent tab auto-expires documents older than 7 days (documents remain in All and Favourites)
+- "Clear All Recent" bulk action on Recent tab (non-destructive — clears timestamps only)
+- "Remove All" bulk action on All tab with confirmation dialog
+- Pinnable default tab — choose which tab loads first from the About dropdown (Recent, Favourites, All)
 
 - Cache version bumped to smmr-v6.2.1
 

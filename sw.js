@@ -1,4 +1,4 @@
-const CACHE_NAME = 'smmr-v6.2.1';
+const CACHE_NAME = 'smmr-v6.2.2';
 const PRECACHE_URLS = [
   '/',
   '/index.html',

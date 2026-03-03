@@ -2,7 +2,7 @@
 
 A beautiful, offline-first Markdown reader and editor built for iPhone and iPad. Reading-first (70%), editing when you need it (30%).
 
-**[Live Demo →](#)** · Built with [Speyer UI v3.3.0](https://github.com/adrianspeyer/speyer-ui)
+**[Live Demo →](#)** · Built with [Speyer UI v3.3.1](https://github.com/adrianspeyer/speyer-ui)
 
 ---
 
@@ -18,7 +18,7 @@ Import Markdown documents, read them in a clean serif-typeset view, and make qui
 - **Import** — From files (.md, .txt) with drag-and-drop support, paste from clipboard, or fetch from a URL
 - **Offline** — Service worker caches the app shell; IndexedDB stores your documents. Works without internet
 - **Share** — Dropdown menu with copy to clipboard, save as file, and native Web Share API (iOS)
-- **Onboarding Tour** — First-visit product walkthrough powered by [Speyer Tour v3.0.0](https://github.com/adrianspeyer/speyer-tour). Replay any time from the About dropdown
+- **Onboarding Tour** — First-visit product walkthrough powered by [Speyer Tour v3.0.1](https://github.com/adrianspeyer/speyer-tour). Replay any time from the About dropdown
 
 ---
 
@@ -111,7 +111,7 @@ Press Enter to advance, Shift+Enter to go back, Escape to close. The find bar sh
 
 ## Design System
 
-Built on [Speyer UI (SUI) v3.3.0](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
+Built on [Speyer UI (SUI) v3.3.1](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
 
 | SUI Component | Usage |
 |---|---|
@@ -210,7 +210,7 @@ Note: `lastOpenedAt` is set to `null` when a document is removed from Recent. Do
 | Speyer UI JS | jsdelivr | ~26KB | Theme, toast, copy, modal, sheet, dropdown, panel, segmented, accordion, tooltip |
 | marked.js v15.0.7 | jsdelivr | 38KB | Markdown parsing |
 | DOMPurify v3.2.4 | jsdelivr | 18KB | HTML sanitisation |
-| Speyer Tour v3.0.0 | local | ~28KB (JS) + ~18KB (CSS) | Onboarding product tour |
+| Speyer Tour v3.0.1 | local | ~28KB (JS) + ~18KB (CSS) | Onboarding product tour |
 | Newsreader font | Google Fonts | ~25KB | Reading typography |
 
 Zero npm dependencies. Zero build tools.
@@ -266,7 +266,7 @@ This app is specifically designed around iOS PWA limitations:
 ├── netlify.toml            ← CSP + security headers (v6.2)
 ├── manifest.json           ← PWA manifest
 ├── src/
-│   ├── speyer-tour.js      ← Onboarding tour (v3.0.0)
+│   ├── speyer-tour.js      ← Onboarding tour (v3.0.1)
 │   └── speyer-tour.css     ← Tour styles
 ├── icons.svg               ← SVG sprite sheet (standalone reference copy)
 ├── icon-192.png            ← PWA icon
@@ -328,7 +328,7 @@ These are intentionally out of scope but are natural next-version features:
 - Added theme flash fix — inline `<script>` in `<head>` applies dark mode before stylesheets load
 
 **Features:**
-- Onboarding tour powered by Speyer Tour v3.0.0 — 6-step first-visit walkthrough with localStorage one-shot
+- Onboarding tour powered by Speyer Tour v3.0.1 — 6-step first-visit walkthrough with localStorage one-shot
 - About dropdown (ℹ️ button) replaces standalone replay button — contains app description + "Replay tour" action. Saves a button slot in the header at 375px
 - Added `i-repeat` icon to inline SVG sprite (36 icons total)
 - Added `<main>` landmark on `data-sui-screens` wrapper (axe/WCAG: "document must have one main landmark")

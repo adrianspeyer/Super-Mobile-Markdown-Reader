@@ -15,9 +15,9 @@
 <link rel="apple-touch-icon" href="apple-touch-icon.png"/>
 
 <!-- Speyer UI System -->
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.1/dist/sui-tokens.min.css"/>
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.1/dist/sui-components.min.css"/>
-<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.3.1/dist/sui.min.js" defer></script>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.5.3/dist/sui-tokens.min.css"/>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.5.3/dist/sui-components.min.css"/>
+<script src="https://cdn.jsdelivr.net/gh/adrianspeyer/speyer-ui@3.5.3/dist/sui.min.js" defer></script>
 
 <!-- Markdown + Sanitizer (updated for security patches) -->
 <script src="https://cdn.jsdelivr.net/npm/marked@15.0.7/marked.min.js"></script>
@@ -77,6 +77,7 @@ body {
 
 /* Document card */
 .doc-card {
+  position: relative;
   display: flex; gap: var(--sui-space-3); padding: var(--sui-space-3);
   margin-bottom: var(--sui-space-2);
   background: var(--sui-bg-card); border: 1px solid var(--sui-border);
@@ -102,6 +103,18 @@ body {
   font-size: var(--sui-text-body); font-weight: var(--sui-weight-semibold);
   margin-bottom: 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
+.doc-open-btn {
+  display: block; width: 100%; padding: 0; border: 0;
+  background: transparent; color: inherit; font-family: inherit;
+  text-align: left; cursor: pointer;
+}
+.doc-open-btn::after {
+  content: ''; position: absolute; inset: 0; border-radius: var(--sui-radius-lg);
+}
+.doc-open-btn:focus-visible { outline: none; }
+.doc-open-btn:focus-visible::after {
+  outline: 3px solid var(--sui-blue-primary); outline-offset: 2px;
+}
 .doc-preview {
   font-size: var(--sui-text-small); color: var(--sui-text-muted); line-height: 1.4;
   display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical;
@@ -109,7 +122,7 @@ body {
 }
 /* Document metadata — uses sui-meta from SUI */
 
-.doc-card-actions { display: flex; flex-direction: column; gap: var(--sui-space-1); flex-shrink: 0; }
+.doc-card-actions { position: relative; z-index: 1; display: flex; flex-direction: column; gap: var(--sui-space-1); flex-shrink: 0; }
 .doc-action-btn {
   width: 32px; height: 32px; border-radius: var(--sui-radius-sm); border: none;
   background: transparent; color: var(--sui-text-muted); display: flex;
@@ -117,6 +130,7 @@ body {
   transition: all var(--sui-duration-fast) var(--sui-easing);
 }
 .doc-action-btn:hover { background: var(--sui-bg-elevated); color: var(--sui-text-primary); }
+.doc-action-btn:focus-visible { outline: 3px solid var(--sui-blue-primary); outline-offset: 2px; }
 .doc-action-btn.fav-active { color: var(--sui-warning); }
 
 /* ============================================================
@@ -230,18 +244,21 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 .toc-item:hover { background: var(--sui-bg-elevated); }
 .toc-item-text {
   flex: 1; text-align: left; color: var(--sui-text-secondary);
+  border: none; background: transparent; cursor: pointer; min-width: 0;
+  min-height: var(--sui-touch-target);
   font-family: var(--sui-font-primary); font-size: var(--sui-text-small);
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .toc-item:hover .toc-item-text { color: var(--sui-text-primary); }
 .toc-edit-btn {
-  width: 28px; height: 28px; border: none; background: transparent;
+  width: var(--sui-touch-target); height: var(--sui-touch-target); border: none; background: transparent;
   color: var(--sui-text-muted); border-radius: var(--sui-radius-sm);
   display: flex; align-items: center; justify-content: center;
   cursor: pointer; opacity: 0; transition: opacity var(--sui-duration-fast) var(--sui-easing);
   flex-shrink: 0;
 }
-.toc-item:hover .toc-edit-btn { opacity: 1; }
+.toc-item:hover .toc-edit-btn, .toc-item:focus-within .toc-edit-btn { opacity: 1; }
+.toc-item-text:focus-visible, .toc-edit-btn:focus-visible { outline: 2px solid var(--sui-blue-primary); outline-offset: 2px; }
 .toc-edit-btn:hover { background: var(--sui-bg-elevated); color: var(--sui-blue-primary); }
 @media (hover: none) { .toc-edit-btn { opacity: 1; } }
 @media (max-width: 480px) {
@@ -477,7 +494,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
     <button class="sui-btn sui-btn-primary sui-mt-3" id="emptyImportBtn"><svg class="icon"><use href="#i-plus"/></svg> Import Document</button>
   </div>
 
-  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.2.4</span></div>
+  <div class="app-footer sui-screen-footer">Made in Canada with ❤️ · <span class="app-version">v6.2.5</span></div>
 </div>
 
 <!-- ============================================================
@@ -741,7 +758,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
       <button class="sui-btn sui-btn-ghost sui-btn-sm sui-sheet-close" aria-label="Close"><svg class="icon"><use href="#i-x"/></svg></button>
     </div>
     <div class="sui-sheet-body" style="display:flex; flex-direction:column; padding-bottom:0;">
-      <textarea class="sui-input" id="sectionTextarea" style="flex:1; font-family:var(--sui-font-mono); font-size:var(--sui-text-small); line-height:1.6; min-height:200px; resize:none;"></textarea>
+      <textarea class="sui-input" id="sectionTextarea" aria-labelledby="sectionSheetTitle" style="flex:1; font-family:var(--sui-font-mono); font-size:var(--sui-text-small); line-height:1.6; min-height:200px; resize:none;"></textarea>
     </div>
     <div class="sui-sheet-footer" style="padding:var(--sui-space-2) var(--sui-space-3); display:flex; justify-content:flex-end; gap:var(--sui-space-2); border-top:1px solid var(--sui-border);">
       <button class="sui-btn sui-btn-ghost sui-btn-sm" id="sectionCancelBtn">Cancel</button>
@@ -757,6 +774,7 @@ dialog.import-dialog .sui-modal-body { padding-bottom: calc(var(--sui-space-4) +
 <!-- ============================================================
      APPLICATION SCRIPT
      ============================================================ -->
+<script src="./src/markdown.js"></script>
 <script>
 (function() {
 'use strict';
@@ -802,8 +820,8 @@ function timeAgo(dateStr) {
 }
 
 function extractTitle(md) {
-  const m = md.match(/^#\s+(.+)/m);
-  if (m) return m[1].replace(/[*_`#]/g, '').trim();
+  const heading = marked.lexer(md, { gfm: true }).find(token => token.type === 'heading' && token.depth === 1);
+  if (heading) return heading.text.replace(/[*_`#]/g, '').trim();
   // Fallback: first 30 chars of actual content
   const firstLine = md.split('\n').find(l => l.trim() && !l.startsWith('---'));
   if (firstLine) return firstLine.replace(/[*_`#\[\]()]/g, '').trim().slice(0, 30) || 'Untitled';
@@ -815,7 +833,10 @@ function extractPreview(md) {
   return (lines.slice(0, 3).join(' ').replace(/[*_`\[\]()]/g, '').trim() || 'No preview').slice(0, 150);
 }
 
-function escapeHtml(s) { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+function escapeHtml(s) {
+  const entities = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' };
+  return String(s ?? '').replace(/[&<>"']/g, char => entities[char]);
+}
 function wordCount(md) { return (md.match(/\b\w+\b/g) || []).length; }
 
 function isAllowedUrl(urlStr) {
@@ -852,17 +873,81 @@ function openDB() {
   });
 }
 
-const dbPut = doc => new Promise((res, rej) => { const tx = db.transaction('documents', 'readwrite'); tx.objectStore('documents').put(doc); tx.oncomplete = () => res(); tx.onerror = e => rej(e.target.error); });
-const dbGet = id => new Promise((res, rej) => { const tx = db.transaction('documents', 'readonly'); const r = tx.objectStore('documents').get(id); r.onsuccess = () => res(r.result); r.onerror = e => rej(e.target.error); });
-const dbDelete = id => new Promise((res, rej) => { const tx = db.transaction('documents', 'readwrite'); tx.objectStore('documents').delete(id); tx.oncomplete = () => res(); tx.onerror = e => rej(e.target.error); });
-const dbGetAll = () => new Promise((res, rej) => { const tx = db.transaction('documents', 'readonly'); const r = tx.objectStore('documents').getAll(); r.onsuccess = () => res(r.result || []); r.onerror = e => rej(e.target.error); });
+function documentError(name) {
+  const error = new Error(name);
+  error.name = name;
+  return error;
+}
+
+function dbRequest(mode, operation) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('documents', mode);
+    let result;
+    tx.oncomplete = () => resolve(result);
+    tx.onerror = () => reject(tx.error || documentError('StorageError'));
+    tx.onabort = () => reject(tx.error || documentError('StorageError'));
+    const request = operation(tx.objectStore('documents'));
+    request.onsuccess = () => { result = request.result; };
+  });
+}
+
+// Creating a document is separate from updating one, so a stale tab cannot
+// accidentally recreate a document that another tab has removed.
+const dbCreate = doc => dbRequest('readwrite', store => store.add(doc));
+const dbGet = id => dbRequest('readonly', store => store.get(id));
+const dbDelete = id => dbRequest('readwrite', store => store.delete(id));
+const dbDeleteMany = ids => ids.length ? dbRequest('readwrite', store => {
+  let lastRequest;
+  for (const id of ids) lastRequest = store.delete(id);
+  return lastRequest;
+}) : Promise.resolve();
+const dbGetAll = () => dbRequest('readonly', store => store.getAll());
+
+function dbUpdate(id, update) {
+  return new Promise((resolve, reject) => {
+    const tx = db.transaction('documents', 'readwrite');
+    const store = tx.objectStore('documents');
+    let updated, failure;
+    tx.oncomplete = () => resolve(updated);
+    tx.onerror = () => reject(failure || tx.error || documentError('StorageError'));
+    tx.onabort = () => reject(failure || tx.error || documentError('StorageError'));
+    const request = store.get(id);
+    request.onsuccess = () => {
+      try {
+        if (!request.result) throw documentError('DocumentMissing');
+        updated = update(request.result);
+        store.put(updated);
+      } catch (error) {
+        failure = error;
+        tx.abort();
+      }
+    };
+  });
+}
+
+function dbSaveMarkdown(id, expectedMarkdown, markdown) {
+  return dbUpdate(id, latest => {
+    if (latest.markdown !== expectedMarkdown) throw documentError('DocumentConflict');
+    return { ...latest, markdown, title: extractTitle(markdown), preview: extractPreview(markdown), updatedAt: new Date().toISOString() };
+  });
+}
+
+function reportSaveError(error) {
+  console.error('Save error:', error);
+  if (error.name === 'DocumentConflict') toast('Changed in another tab. Your draft is still here; copy it before reopening the latest version.', 'error');
+  else if (error.name === 'DocumentMissing') toast('Removed in another tab. Your draft is still here; copy it before closing.', 'error');
+  else toast('Could not save. Your draft is still here. Please try again.', 'error');
+}
 
 // ============================================================
 // MARKDOWN
 // ============================================================
+let readerSections = [], renderMarker = '';
 function renderMD(md) {
-  marked.use({ gfm: true, breaks: true });
-  return DOMPurify.sanitize(marked.parse(md), { ADD_TAGS: ['input'], ADD_ATTR: ['type', 'checked', 'disabled'] });
+  renderMarker = uuid();
+  const rendered = SMMRMarkdown.render(marked, md, renderMarker);
+  readerSections = rendered.sections;
+  return DOMPurify.sanitize(rendered.html, { ADD_TAGS: ['input'], ADD_ATTR: ['type', 'checked', 'disabled'] });
 }
 
 // ============================================================
@@ -870,6 +955,8 @@ function renderMD(md) {
 // ============================================================
 let allDocs = [], currentDoc = null, currentTab = 'recent', searchQuery = '';
 let isEditing = false, editSnapshot = '';
+let isSavePending = false;
+let documentOpenRequest = 0;
 let settings = { fontSize: 18, width: 'narrow', font: 'serif', theme: 'light', defaultTab: 'recent' };
 function loadSettings() { try { const s = localStorage.getItem('smmr_settings'); if (s) settings = { ...settings, ...JSON.parse(s) }; } catch {} }
 function saveSettings() { localStorage.setItem('smmr_settings', JSON.stringify(settings)); }
@@ -883,6 +970,12 @@ function showScreen(id) { $$('.sui-screen').forEach(s => s.classList.remove('is-
 // LIBRARY
 // ============================================================
 async function loadLibrary() { allDocs = await dbGetAll(); renderLibrary(); }
+
+function rememberDoc(doc) {
+  const index = allDocs.findIndex(item => item.id === doc.id);
+  if (index === -1) allDocs.push(doc);
+  else allDocs[index] = doc;
+}
 
 function renderLibrary() {
   const list = $('libraryList'), empty = $('emptyState');
@@ -914,21 +1007,22 @@ function renderLibrary() {
     const srcIcon = doc.sourceType === 'paste' ? 'clipboard' : doc.sourceType === 'url' ? 'link' : 'file-text';
     const wc = wordCount(doc.markdown || '');
     const showRemoveRecent = currentTab === 'recent';
+    const titleAttr = escapeHtml(doc.title);
     return `
       <div class="doc-card" data-id="${escapeHtml(doc.id)}">
         <div class="doc-icon ${srcClass}">${icon(srcIcon)}</div>
         <div class="doc-info">
-          <div class="doc-title">${escapeHtml(doc.title)}</div>
+          <button type="button" class="doc-open-btn doc-title" data-open="${escapeHtml(doc.id)}" aria-label="Open ${titleAttr}">${escapeHtml(doc.title)}</button>
           <div class="doc-preview">${escapeHtml(doc.preview || '')}</div>
           <div class="sui-meta"><span>${timeAgo(doc.lastOpenedAt || doc.createdAt)}</span><span>${Math.max(1, Math.ceil(wc / 238))} min read</span><span>${wc.toLocaleString()} words</span></div>
         </div>
         <div class="doc-card-actions">
-          <button class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${escapeHtml(doc.id)}" title="Favourite" aria-label="Toggle favourite">
+          <button type="button" class="doc-action-btn ${doc.favorite ? 'fav-active' : ''}" data-fav="${escapeHtml(doc.id)}" title="Favourite" aria-label="Favourite ${titleAttr}" aria-pressed="${doc.favorite ? 'true' : 'false'}">
             ${icon(doc.favorite ? 'star-filled' : 'star', 'icon-sm')}
           </button>
           ${showRemoveRecent
-            ? `<button class="doc-action-btn" data-remove-recent="${escapeHtml(doc.id)}" title="Clear from Recent" aria-label="Clear from Recent">${icon('trash', 'icon-sm')}</button>`
-            : `<button class="doc-action-btn" data-del="${escapeHtml(doc.id)}" title="Remove" aria-label="Remove">${icon('trash', 'icon-sm')}</button>`
+            ? `<button type="button" class="doc-action-btn" data-remove-recent="${escapeHtml(doc.id)}" title="Clear from Recent" aria-label="Clear ${titleAttr} from Recent">${icon('trash', 'icon-sm')}</button>`
+            : `<button type="button" class="doc-action-btn" data-del="${escapeHtml(doc.id)}" title="Remove" aria-label="Remove ${titleAttr}">${icon('trash', 'icon-sm')}</button>`
           }
         </div>
       </div>`;
@@ -942,21 +1036,32 @@ function renderLibrary() {
   }
 
   // Events
-  list.querySelectorAll('.doc-card').forEach(card => {
-    card.addEventListener('click', e => { if (e.target.closest('.doc-action-btn')) return; openDocument(card.dataset.id); });
+  list.querySelectorAll('[data-open]').forEach(btn => {
+    btn.addEventListener('click', () => openDocument(btn.dataset.open));
   });
   list.querySelectorAll('[data-fav]').forEach(btn => {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
-      const doc = allDocs.find(d => d.id === btn.dataset.fav);
-      if (doc) { doc.favorite = !doc.favorite; doc.updatedAt = new Date().toISOString(); await dbPut(doc); renderLibrary(); toast(doc.favorite ? 'Added to favourites' : 'Removed from favourites', doc.favorite ? 'success' : 'info'); }
+      btn.disabled = true;
+      try {
+        const doc = await dbUpdate(btn.dataset.fav, latest => ({ ...latest, favorite: !latest.favorite, updatedAt: new Date().toISOString() }));
+        rememberDoc(doc); renderLibrary();
+        toast(doc.favorite ? 'Added to favourites' : 'Removed from favourites', doc.favorite ? 'success' : 'info');
+      } catch (error) {
+        toast(error.name === 'DocumentMissing' ? 'This document was removed in another tab.' : 'Could not update favourite. Please try again.', 'error');
+      } finally { btn.disabled = false; }
     });
   });
   list.querySelectorAll('[data-remove-recent]').forEach(btn => {
     btn.addEventListener('click', async e => {
       e.stopPropagation();
-      const doc = allDocs.find(d => d.id === btn.dataset.removeRecent);
-      if (doc) { doc.lastOpenedAt = null; doc.updatedAt = new Date().toISOString(); await dbPut(doc); renderLibrary(); toast('Cleared from Recent', 'info'); }
+      btn.disabled = true;
+      try {
+        const doc = await dbUpdate(btn.dataset.removeRecent, latest => ({ ...latest, lastOpenedAt: null, updatedAt: new Date().toISOString() }));
+        rememberDoc(doc); renderLibrary(); toast('Cleared from Recent', 'info');
+      } catch (error) {
+        toast(error.name === 'DocumentMissing' ? 'This document was removed in another tab.' : 'Could not clear this document from Recent. Please try again.', 'error');
+      } finally { btn.disabled = false; }
     });
   });
   list.querySelectorAll('[data-del]').forEach(btn => {
@@ -972,13 +1077,20 @@ function renderLibrary() {
   });
 
   // Bulk: Clear All Recent (non-destructive — nulls timestamps)
-  $('clearAllRecentBtn')?.addEventListener('click', async () => {
+  $('clearAllRecentBtn')?.addEventListener('click', async e => {
+    const button = e.currentTarget;
+    button.disabled = true;
     const now = new Date().toISOString();
-    for (const doc of allDocs) {
-      if (doc.lastOpenedAt) { doc.lastOpenedAt = null; doc.updatedAt = now; await dbPut(doc); }
-    }
-    renderLibrary();
-    toast('Cleared all recent', 'info');
+    try {
+      for (const doc of await dbGetAll()) {
+        if (!doc.lastOpenedAt) continue;
+        try { await dbUpdate(doc.id, latest => ({ ...latest, lastOpenedAt: null, updatedAt: now })); }
+        catch (error) { if (error.name !== 'DocumentMissing') throw error; }
+      }
+      await loadLibrary();
+      toast('Cleared all recent', 'info');
+    } catch { toast('Could not clear all Recent documents. Please try again.', 'error'); }
+    finally { button.disabled = false; }
   });
 
   // Bulk: Remove All (destructive — uses confirmation dialog)
@@ -992,110 +1104,171 @@ function renderLibrary() {
 // ============================================================
 // IMPORT — native <dialog>
 // ============================================================
+let activeUrlFetch = null;
 function openImportModal() { $('importMain').classList.add('active'); $('importPasteView').classList.remove('active'); $('importUrlView').classList.remove('active'); $('importDialog').showModal(); }
-function closeImportModal() { $('importDialog').close(); $('pasteTextarea').value = ''; $('urlInput').value = ''; }
+function closeImportModal() {
+  if (isSavePending) return;
+  activeUrlFetch?.abort();
+  $('importDialog').close(); $('pasteTextarea').value = ''; $('urlInput').value = '';
+}
+$('importDialog').addEventListener('cancel', e => { if (isSavePending) e.preventDefault(); else activeUrlFetch?.abort(); });
 
-async function saveDoc(md, sourceType, sourceUrl) {
+async function saveDoc(md, sourceType, sourceUrl, importedTitle) {
   const now = new Date().toISOString();
-  const doc = { id: uuid(), title: extractTitle(md), markdown: md, preview: extractPreview(md), sourceType, sourceUrl: sourceUrl || null, favorite: false, createdAt: now, updatedAt: now, lastOpenedAt: now, lastScrollY: 0 };
-  await dbPut(doc); allDocs.push(doc); return doc;
+  const doc = { id: uuid(), title: importedTitle || extractTitle(md), markdown: md, preview: extractPreview(md), sourceType, sourceUrl: sourceUrl || null, favorite: false, createdAt: now, updatedAt: now, lastOpenedAt: now, lastScrollY: 0 };
+  await dbCreate(doc); rememberDoc(doc); return doc;
+}
+
+async function importFiles(files) {
+  if (!files.length || isSavePending) return;
+  isSavePending = true;
+  let lastDoc, imported = 0;
+  try {
+    for (const file of files) {
+      const text = await file.text();
+      lastDoc = await saveDoc(text, 'file', null, file.name.replace(/\.(md|markdown|txt)$/i, ''));
+      imported++;
+    }
+  } catch (error) {
+    console.error('Import error:', error);
+    toast(imported ? `Imported ${imported} document${imported > 1 ? 's' : ''}. The remaining files could not be saved.` : 'Could not import these files. Please try again.', 'error');
+  } finally { isSavePending = false; }
+  if (imported !== files.length) { renderLibrary(); return; }
+  closeImportModal();
+  toast(`Imported ${imported} document${imported > 1 ? 's' : ''}`, 'success');
+  if (files.length === 1) await openDocument(lastDoc.id);
+  else { try { await loadLibrary(); } catch { renderLibrary(); } }
 }
 
 $('fileInput').addEventListener('change', async e => {
-  const files = Array.from(e.target.files); if (!files.length) return;
-  closeImportModal(); let lastDoc;
-  for (const file of files) { const text = await file.text(); lastDoc = await saveDoc(text, 'file'); lastDoc.title = file.name.replace(/\.(md|markdown|txt)$/i, '') || lastDoc.title; await dbPut(lastDoc); }
-  toast(`Imported ${files.length} document${files.length > 1 ? 's' : ''}`, 'success');
-  if (files.length === 1 && lastDoc) openDocument(lastDoc.id); else await loadLibrary();
+  await importFiles(Array.from(e.target.files));
   e.target.value = '';
 });
 
 $('pasteSaveBtn').addEventListener('click', async () => {
+  if (isSavePending) return;
   const md = $('pasteTextarea').value.trim(); if (!md) { toast('Please paste some content', 'warning'); return; }
-  closeImportModal(); const doc = await saveDoc(md, 'paste'); toast('Document saved', 'success'); openDocument(doc.id);
+  isSavePending = true;
+  $('pasteSaveBtn').disabled = true;
+  $('pasteTextarea').readOnly = true;
+  let doc;
+  try { doc = await saveDoc(md, 'paste'); }
+  catch (error) { reportSaveError(error); }
+  finally {
+    isSavePending = false;
+    $('pasteSaveBtn').disabled = false;
+    $('pasteTextarea').readOnly = false;
+  }
+  if (doc) { closeImportModal(); toast('Document saved', 'success'); await openDocument(doc.id); }
 });
 
 $('urlFetchBtn').addEventListener('click', async () => {
+  if (isSavePending || activeUrlFetch) return;
   const url = $('urlInput').value.trim(); if (!url) { toast('Please enter a URL', 'warning'); return; }
   if (!isAllowedUrl(url)) { toast('Please enter a valid public https:// URL', 'warning'); return; }
   $('urlFetchBtn').disabled = true; $('urlFetchBtn').innerHTML = `${icon('loader', 'icon-spin')} Fetching...`;
+  const controller = new AbortController();
+  activeUrlFetch = controller;
+  let saving = false;
   try {
-    const resp = await fetch(url); if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-    const md = await resp.text(); closeImportModal();
-    const doc = await saveDoc(md, 'url', url); toast('Document fetched & saved', 'success'); openDocument(doc.id);
-  } catch (err) { console.error('Fetch error:', err); toast('Failed to fetch document. Check the URL and try again.', 'error'); }
-  finally { $('urlFetchBtn').disabled = false; $('urlFetchBtn').innerHTML = `${icon('download')} Fetch & Read`; }
+    const resp = await fetch(url, { signal: controller.signal }); if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+    const md = await resp.text();
+    if (controller.signal.aborted) return;
+    if (isSavePending) { toast('Another save is in progress. Please try importing again.', 'info'); return; }
+    isSavePending = true; saving = true;
+    const doc = await saveDoc(md, 'url', url);
+    isSavePending = false; saving = false; activeUrlFetch = null;
+    closeImportModal(); toast('Document fetched & saved', 'success'); await openDocument(doc.id);
+  } catch (error) {
+    if (saving) reportSaveError(error);
+    else if (error.name !== 'AbortError') { console.error('Fetch error:', error); toast('Failed to fetch document. Check the URL and try again.', 'error'); }
+  } finally {
+    if (saving) isSavePending = false;
+    if (activeUrlFetch === controller) activeUrlFetch = null;
+    $('urlFetchBtn').disabled = false; $('urlFetchBtn').innerHTML = `${icon('download')} Fetch & Read`;
+  }
 });
 
 // ============================================================
 // READER
 // ============================================================
 async function openDocument(id) {
-  const doc = allDocs.find(d => d.id === id) || await dbGet(id);
-  if (!doc) { toast('Document not found', 'error'); return; }
-  currentDoc = doc; doc.lastOpenedAt = new Date().toISOString(); await dbPut(doc);
-  exitEditMode(); renderDoc(); showScreen('readerScreen');
-  requestAnimationFrame(() => { $('readerBody').scrollTop = doc.lastScrollY || 0; });
+  if (isSavePending) return;
+  const request = ++documentOpenRequest;
+  try {
+    const doc = await dbUpdate(id, latest => ({ ...latest, lastOpenedAt: new Date().toISOString() }));
+    if (request !== documentOpenRequest || isSavePending) return;
+    rememberDoc(doc);
+    clearTimeout(scrollTimer);
+    currentDoc = doc;
+    exitEditMode(); renderDoc(); showScreen('readerScreen');
+    requestAnimationFrame(() => { if (currentDoc?.id === id) $('readerBody').scrollTop = doc.lastScrollY || 0; });
+  } catch (error) {
+    if (request !== documentOpenRequest) return;
+    toast(error.name === 'DocumentMissing' ? 'This document was removed in another tab.' : 'Could not open this document. Please try again.', 'error');
+  }
 }
 
 function buildTOC() {
   const tocList = $('tocList');
   const headers = $('readerContent').querySelectorAll('h1,h2,h3,h4,h5,h6');
+  const headingSet = new Set(headers);
+  const usedIds = new Set([...document.querySelectorAll('[id]')].filter(el => !headingSet.has(el)).map(el => el.id));
   tocList.innerHTML = '';
-  headers.forEach((h, i) => {
-    const level = parseInt(h.tagName[1]); if (!h.id) h.id = `heading-${i}`;
+  headers.forEach(h => {
+    const level = parseInt(h.tagName[1]);
+    if (!h.id || usedIds.has(h.id)) h.id = SMMRMarkdown.slug(h.textContent, usedIds);
+    else usedIds.add(h.id);
+    const source = h.getAttribute('data-smmr-section') || '';
+    const sectionIndex = source.startsWith(renderMarker + ':') ? Number(source.slice(renderMarker.length + 1)) : -1;
+    h.removeAttribute('data-smmr-section');
     const row = document.createElement('div'); row.className = 'toc-item';
     row.style.paddingLeft = `${12 + (level - 1) * 16}px`;
-    const text = document.createElement('span'); text.className = 'toc-item-text';
+    const text = document.createElement('button'); text.type = 'button'; text.className = 'toc-item-text';
     text.textContent = h.textContent;
     if (level <= 2) text.style.fontWeight = 'var(--sui-weight-semibold)';
-    text.addEventListener('click', () => { h.scrollIntoView({ behavior: 'smooth', block: 'start' }); closeTOC(); });
-    const editBtn = document.createElement('button'); editBtn.className = 'toc-edit-btn';
-    editBtn.innerHTML = icon('pencil', 'icon-sm');
-    editBtn.title = 'Edit this section';
-    editBtn.setAttribute('aria-label', `Edit section: ${h.textContent}`);
-    editBtn.addEventListener('click', e => { e.stopPropagation(); openSectionEdit(i); });
-    row.appendChild(text); row.appendChild(editBtn);
+    text.addEventListener('click', () => { closeTOC(); requestAnimationFrame(() => navigateToHeading(h)); });
+    row.appendChild(text);
+    if (Number.isInteger(sectionIndex) && readerSections[sectionIndex]) {
+      const editBtn = document.createElement('button'); editBtn.type = 'button'; editBtn.className = 'toc-edit-btn';
+      editBtn.innerHTML = icon('pencil', 'icon-sm');
+      editBtn.title = 'Edit this section';
+      editBtn.setAttribute('aria-label', `Edit section: ${h.textContent}`);
+      editBtn.addEventListener('click', () => openSectionEdit(sectionIndex));
+      row.appendChild(editBtn);
+    }
     tocList.appendChild(row);
   });
 }
+
+function navigateToHeading(heading) {
+  heading.tabIndex = -1;
+  heading.focus({ preventScroll: true });
+  heading.scrollIntoView({ behavior: window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth', block: 'start' });
+}
+
+$('readerContent').addEventListener('click', e => {
+  const link = e.target.closest('a[href^="#"]');
+  if (!link || e.metaKey || e.ctrlKey || e.shiftKey || e.altKey) return;
+  let id;
+  try { id = decodeURIComponent(link.getAttribute('href').slice(1)); } catch { return; }
+  const target = [...$('readerContent').querySelectorAll('[id]')].find(el => el.id === id);
+  if (target) { e.preventDefault(); navigateToHeading(target); }
+});
 
 // ============================================================
 // SECTION EDITING — edit one section via bottom sheet
 // ============================================================
 let activeSectionEdit = null;
 
-function parseSections(md) {
-  // Find all header line positions in raw markdown, skipping code blocks
-  const lines = md.split('\n');
-  const sections = [];
-  let inCodeBlock = false;
-  lines.forEach((line, i) => {
-    if (line.trim().startsWith('```')) { inCodeBlock = !inCodeBlock; return; }
-    if (inCodeBlock) return;
-    const m = line.match(/^(#{1,6})\s+(.+)/);
-    if (m) sections.push({ lineIndex: i, level: m[1].length, title: m[2].trim() });
-  });
-  return sections;
-}
+function buildSectionMarkdown(section, editedText) { return SMMRMarkdown.replaceSection(section, editedText); }
 
 function openSectionEdit(headerIndex) {
-  if (!currentDoc) return;
-  const sections = parseSections(currentDoc.markdown);
-  if (headerIndex >= sections.length) return;
-
-  const sec = sections[headerIndex];
-  const lines = currentDoc.markdown.split('\n');
-  const startLine = sec.lineIndex;
-
-  // Find the end: next header at same or higher level (lower number), or end of doc
-  let endLine = lines.length;
-  for (let i = headerIndex + 1; i < sections.length; i++) {
-    if (sections[i].level <= sec.level) { endLine = sections[i].lineIndex; break; }
-  }
-
-  const sectionText = lines.slice(startLine, endLine).join('\n');
-  activeSectionEdit = { startLine, endLine, headerIndex };
+  if (!currentDoc || isSavePending) return;
+  const sec = readerSections[headerIndex];
+  if (!sec) return;
+  const sectionText = currentDoc.markdown.slice(sec.startOffset, sec.endOffset);
+  activeSectionEdit = { ...sec, headerIndex, docId: currentDoc.id, sourceMarkdown: currentDoc.markdown, originalText: sectionText.replace(/\r\n|\r/g, '\n') };
 
   $('sectionSheetTitle').textContent = `Edit: ${sec.title}`;
   $('sectionTextarea').value = sectionText;
@@ -1105,28 +1278,55 @@ function openSectionEdit(headerIndex) {
 }
 
 $('sectionSaveBtn').addEventListener('click', async () => {
-  if (!currentDoc || !activeSectionEdit) return;
-  const lines = currentDoc.markdown.split('\n');
-  const { startLine, endLine } = activeSectionEdit;
+  if (!currentDoc || !activeSectionEdit || isSavePending) return;
+  const section = activeSectionEdit;
   const newSection = $('sectionTextarea').value;
-
-  // Splice the edited section back in
-  const before = lines.slice(0, startLine);
-  const after = lines.slice(endLine);
-  currentDoc.markdown = [...before, ...newSection.split('\n'), ...after].join('\n');
-  currentDoc.title = extractTitle(currentDoc.markdown);
-  currentDoc.preview = extractPreview(currentDoc.markdown);
-  currentDoc.updatedAt = new Date().toISOString();
-  await dbPut(currentDoc);
-
-  // Re-render
-  renderDoc();
-  SUI.sheet.close($('sectionSheet'));
-  activeSectionEdit = null;
-  toast('Section saved', 'success');
+  isSavePending = true;
+  $('sectionSaveBtn').disabled = true;
+  $('sectionTextarea').readOnly = true;
+  try {
+    const markdown = buildSectionMarkdown(section, newSection);
+    const saved = await dbSaveMarkdown(section.docId, section.sourceMarkdown, markdown);
+    rememberDoc(saved);
+    if (currentDoc?.id === section.docId && activeSectionEdit === section) {
+      currentDoc = saved;
+      renderDoc();
+      activeSectionEdit = null;
+      SUI.sheet.close($('sectionSheet'));
+    }
+    toast('Section saved', 'success');
+  } catch (error) { reportSaveError(error); }
+  finally {
+    isSavePending = false;
+    $('sectionSaveBtn').disabled = false;
+    $('sectionTextarea').readOnly = false;
+  }
 });
 
-$('sectionCancelBtn').addEventListener('click', () => { SUI.sheet.close($('sectionSheet')); activeSectionEdit = null; });
+function closeSectionEditor() {
+  confirmDiscard(() => { activeSectionEdit = null; SUI.sheet.close($('sectionSheet')); });
+}
+// Handle dismissal before SUI's automatic close handlers so drafts survive
+// backdrop clicks, Escape and a second tap while a save is pending.
+$('sectionSheet').addEventListener('click', e => {
+  if (e.target === $('sectionSheet') || e.target.closest('.sui-sheet-close, #sectionCancelBtn')) {
+    e.preventDefault(); e.stopImmediatePropagation(); closeSectionEditor();
+  }
+}, true);
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && $('sectionSheet').classList.contains('is-open') && !$('discardDialog').open) {
+    e.preventDefault(); e.stopImmediatePropagation(); closeSectionEditor();
+  }
+}, true);
+
+function hasUnsavedChanges() {
+  return (isEditing && $('editorTextarea').value !== editSnapshot.replace(/\r\n|\r/g, '\n')) ||
+    (activeSectionEdit && $('sectionTextarea').value !== activeSectionEdit.originalText) ||
+    ($('importDialog').open && ($('pasteTextarea').value.trim() || $('urlInput').value.trim()));
+}
+window.addEventListener('beforeunload', e => {
+  if (hasUnsavedChanges() || isSavePending) { e.preventDefault(); e.returnValue = ''; }
+});
 // Also reset if sheet closes via X button or backdrop (SUI auto-close)
 const secSheetObs = new MutationObserver(() => {
   if (!$('sectionSheet').classList.contains('is-open')) activeSectionEdit = null;
@@ -1143,17 +1343,35 @@ function renderDoc() {
 }
 
 let scrollTimer;
+async function persistReaderScroll(id, scrollY) {
+  try {
+    const saved = await dbUpdate(id, latest => ({ ...latest, lastScrollY: scrollY }));
+    rememberDoc(saved);
+    if (currentDoc?.id === id) currentDoc = { ...currentDoc, lastScrollY: scrollY };
+  } catch (error) {
+    if (error.name !== 'DocumentMissing') console.error('Could not save reading position:', error);
+  }
+}
+
 $('readerBody').addEventListener('scroll', () => {
   $('backToTopBtn').classList.toggle('visible', $('readerBody').scrollTop > 300);
   clearTimeout(scrollTimer);
-  scrollTimer = setTimeout(async () => { if (currentDoc && !isEditing) { currentDoc.lastScrollY = $('readerBody').scrollTop; await dbPut(currentDoc); } }, 1000);
+  if (!currentDoc || isEditing) return;
+  const id = currentDoc.id, scrollY = $('readerBody').scrollTop;
+  scrollTimer = setTimeout(() => persistReaderScroll(id, scrollY), 1000);
 });
 
 $('backToTopBtn').addEventListener('click', () => $('readerBody').scrollTo({ top: 0, behavior: 'smooth' }));
 
 $('readerBackBtn').addEventListener('click', async () => {
   confirmDiscard(async () => {
-    exitEditMode(); showScreen('libraryScreen'); await loadLibrary(); currentDoc = null;
+    const id = currentDoc?.id, scrollY = $('readerBody').scrollTop, wasEditing = isEditing;
+    clearTimeout(scrollTimer);
+    documentOpenRequest++;
+    exitEditMode(); showScreen('libraryScreen'); currentDoc = null;
+    if (id && !wasEditing) await persistReaderScroll(id, scrollY);
+    try { await loadLibrary(); }
+    catch { toast('Could not refresh the library. Please try again.', 'error'); }
   });
 });
 
@@ -1201,7 +1419,7 @@ async function copyClip(text) {
 // EDITOR
 // ============================================================
 function enterEditMode() {
-  if (!currentDoc) return; isEditing = true; editSnapshot = currentDoc.markdown;
+  if (!currentDoc || isSavePending) return; isEditing = true; editSnapshot = currentDoc.markdown;
   closeFind(); // clear reader highlights before switching
   $('editorTextarea').value = currentDoc.markdown;
   $('editorBar').classList.add('active'); $('editorToolbar').classList.add('active'); $('editorContainer').classList.add('active');
@@ -1223,20 +1441,23 @@ function exitEditMode() {
 
 // Auto-closing pairs — type [ and get [] with cursor between
 $('editorTextarea').addEventListener('keydown', e => {
+  if (e.ctrlKey || e.metaKey || e.altKey || e.isComposing || e.keyCode === 229) return;
   const pairs = { '[': ']', '(': ')', '*': '*', '`': '`', '"': '"', '_': '_' };
+  const ta = e.target, start = ta.selectionStart, end = ta.selectionEnd;
+  // Handle closing keys before checking openers, including ] and ).
+  if (start === end && Object.values(pairs).includes(e.key) && ta.value[end] === e.key) {
+    e.preventDefault();
+    ta.selectionStart = ta.selectionEnd = end + 1;
+    return;
+  }
   const close = pairs[e.key];
   if (!close) return;
-  const ta = e.target, start = ta.selectionStart, end = ta.selectionEnd;
   const selected = ta.value.substring(start, end);
   if (selected) {
     // Wrap selection
     e.preventDefault();
     ta.setRangeText(e.key + selected + close, start, end, 'select');
     ta.selectionStart = start + 1; ta.selectionEnd = end + 1;
-  } else if (e.key === close && ta.value[end] === close) {
-    // Skip over existing closing char
-    e.preventDefault();
-    ta.selectionStart = ta.selectionEnd = end + 1;
   } else {
     e.preventDefault();
     ta.setRangeText(e.key + close, start, end, 'end');
@@ -1390,7 +1611,8 @@ $('findInput').addEventListener('keydown', e => {
 // ============================================================
 let discardCallback = null;
 function confirmDiscard(cb) {
-  if (!isEditing || $('editorTextarea').value === editSnapshot) { cb(); return; }
+  if (isSavePending) { toast('Please wait for the save to finish.', 'info'); return; }
+  if (!hasUnsavedChanges()) { cb(); return; }
   discardCallback = cb;
   $('discardDialog').showModal();
 }
@@ -1405,12 +1627,29 @@ $('discardDialog').addEventListener('click', e => { if (e.target === $('discardD
 $('editToggleBtn').addEventListener('click', enterEditMode);
 $('editorCancelBtn').addEventListener('click', () => confirmDiscard(() => exitEditMode()));
 $('editorSaveBtn').addEventListener('click', async () => {
-  if (!currentDoc) return;
+  if (!currentDoc || !isEditing || isSavePending) return;
+  const id = currentDoc.id, snapshot = editSnapshot;
   const newMd = $('editorTextarea').value;
-  currentDoc.markdown = newMd; currentDoc.title = extractTitle(newMd); currentDoc.preview = extractPreview(newMd); currentDoc.updatedAt = new Date().toISOString();
-  await dbPut(currentDoc);
-  const idx = allDocs.findIndex(d => d.id === currentDoc.id); if (idx !== -1) allDocs[idx] = currentDoc;
-  renderDoc(); exitEditMode(); toast('Document saved', 'success');
+  isSavePending = true;
+  $('editorSaveBtn').disabled = true;
+  $('editorTextarea').readOnly = true;
+  try {
+    const saved = await dbSaveMarkdown(id, snapshot, newMd);
+    rememberDoc(saved);
+    if (currentDoc?.id === id && isEditing) {
+      currentDoc = saved;
+      editSnapshot = newMd;
+      renderDoc();
+      // Toolbar actions may still update a draft while persistence is pending.
+      if ($('editorTextarea').value === newMd) exitEditMode();
+    }
+    toast(isEditing ? 'Saved. Your newer edits are still unsaved.' : 'Document saved', 'success');
+  } catch (error) { reportSaveError(error); }
+  finally {
+    isSavePending = false;
+    $('editorSaveBtn').disabled = false;
+    $('editorTextarea').readOnly = false;
+  }
 });
 
 // ============================================================
@@ -1434,14 +1673,17 @@ function cleanupAfterDialog() {
 $$('dialog.sui-dialog').forEach(d => d.addEventListener('close', cleanupAfterDialog));
 
 $('deleteConfirmBtn').addEventListener('click', async () => {
-  if (pendingDeleteId) {
-    await dbDelete(pendingDeleteId);
-    allDocs = allDocs.filter(d => d.id !== pendingDeleteId);
-    pendingDeleteId = null;
-    $('deleteDialog').close();
+  const id = pendingDeleteId, button = $('deleteConfirmBtn');
+  if (!id || button.disabled) return;
+  button.disabled = true;
+  try {
+    await dbDelete(id);
+    allDocs = allDocs.filter(d => d.id !== id);
+    if (pendingDeleteId === id) { pendingDeleteId = null; $('deleteDialog').close(); }
     renderLibrary();
     toast('Document removed', 'info');
-  }
+  } catch { toast('Could not remove this document. Please try again.', 'error'); }
+  finally { button.disabled = false; }
 });
 $('deleteCloseX').addEventListener('click', () => $('deleteDialog').close());
 $('deleteCancelBtn').addEventListener('click', () => $('deleteDialog').close());
@@ -1449,11 +1691,18 @@ $('deleteDialog').addEventListener('click', e => { if (e.target === $('deleteDia
 
 // Bulk remove all documents
 $('bulkRemoveConfirmBtn').addEventListener('click', async () => {
-  for (const doc of allDocs) { await dbDelete(doc.id); }
-  allDocs = [];
-  $('bulkRemoveDialog').close();
-  renderLibrary();
-  toast('All documents removed', 'info');
+  const button = $('bulkRemoveConfirmBtn');
+  if (button.disabled) return;
+  button.disabled = true;
+  const ids = allDocs.map(doc => doc.id);
+  try {
+    await dbDeleteMany(ids);
+    allDocs = allDocs.filter(doc => !ids.includes(doc.id));
+    $('bulkRemoveDialog').close();
+    renderLibrary();
+    toast('Documents removed', 'info');
+  } catch { toast('Could not remove the documents. Please try again.', 'error'); }
+  finally { button.disabled = false; }
 });
 $('bulkRemoveCloseX').addEventListener('click', () => $('bulkRemoveDialog').close());
 $('bulkRemoveCancelBtn').addEventListener('click', () => $('bulkRemoveDialog').close());
@@ -1504,10 +1753,7 @@ const dz = $('importDropzone');
 dz.addEventListener('drop', async e => {
   const files = Array.from(e.dataTransfer.files).filter(f => /\.(md|markdown|txt)$/i.test(f.name) || f.type.startsWith('text/'));
   if (!files.length) { toast('Drop .md, .markdown, or .txt files', 'warning'); return; }
-  closeImportModal(); let lastDoc;
-  for (const file of files) { const text = await file.text(); lastDoc = await saveDoc(text, 'file'); lastDoc.title = file.name.replace(/\.(md|markdown|txt)$/i, '') || lastDoc.title; await dbPut(lastDoc); }
-  toast(`Imported ${files.length} document${files.length > 1 ? 's' : ''}`, 'success');
-  if (files.length === 1 && lastDoc) openDocument(lastDoc.id); else await loadLibrary();
+  await importFiles(files);
 });
 
 // ============================================================
@@ -1538,7 +1784,7 @@ async function updateOnline() {
   if (!isStandalone) { $('offlineBar').classList.remove('show'); document.body.style.paddingTop = ''; return; }
   let offline = !navigator.onLine;
   if (!offline) {
-    try { await fetch('/manifest.json', { cache: 'no-store', method: 'HEAD' }); }
+    try { const response = await fetch('./manifest.json', { cache: 'no-store', method: 'HEAD' }); offline = !response.ok; }
     catch { offline = true; }
   }
   $('offlineBar').classList.toggle('show', offline);
@@ -1552,10 +1798,11 @@ setTimeout(updateOnline, 300);
 // KEYBOARD SHORTCUTS
 // ============================================================
 document.addEventListener('keydown', e => {
+  if (e.defaultPrevented || document.querySelector('dialog[open]') || activeSectionEdit) return;
   if ((e.metaKey || e.ctrlKey) && e.key === 's' && isEditing) { e.preventDefault(); $('editorSaveBtn').click(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'b' && isEditing) { e.preventDefault(); fmtActions.bold(); }
   if ((e.metaKey || e.ctrlKey) && e.key === 'i' && isEditing) { e.preventDefault(); fmtActions.italic(); }
-  if ((e.metaKey || e.ctrlKey) && e.key === 'f' && !isEditing) { e.preventDefault(); $('findToggleBtn').click(); }
+  if ((e.metaKey || e.ctrlKey) && e.key === 'f' && !isEditing && $('readerScreen').classList.contains('is-active')) { e.preventDefault(); $('findToggleBtn').click(); }
   if (e.key === 'Escape') { if ($('findBar').classList.contains('active')) { closeFind(); return; } if (isEditing) { $('editorCancelBtn').click(); return; } closeSettings(); }
 });
 
@@ -1582,49 +1829,75 @@ function applyAllSettings() {
 }
 
 // --- Robust Service Worker Update Flow ---
+let pendingUpdateWorker = null;
+let updateReadyToReload = false;
+let refreshing = false;
+
+function reloadForUpdate() {
+  if (refreshing) return;
+  if (isSavePending || hasUnsavedChanges()) {
+    showUpdateToast();
+    toast('Save or cancel your edits before refreshing.', 'warning');
+    return;
+  }
+  refreshing = true;
+  window.location.reload();
+}
+
 if ('serviceWorker' in navigator) {
+  let hadController = !!navigator.serviceWorker.controller;
+  navigator.serviceWorker.addEventListener('controllerchange', () => {
+    // The first worker can control this page without interrupting its session.
+    if (!hadController) { hadController = true; return; }
+    pendingUpdateWorker = null;
+    updateReadyToReload = true;
+    reloadForUpdate();
+  });
+
   window.addEventListener('load', async () => {
-    let refreshing = false;
-
-    // 1. Register
-    const reg = await navigator.serviceWorker.register('./sw.js');
-
-    // 2. Listen for controller change (activates reload)
-    navigator.serviceWorker.addEventListener('controllerchange', () => {
-      if (refreshing) return;
-      refreshing = true;
-      window.location.reload();
-    });
-
-    // 3. Check for waiting worker
-    if (reg.waiting) {
-      showUpdateToast(reg.waiting);
-      return;
+    try {
+      const reg = await navigator.serviceWorker.register('./sw.js');
+      const watchInstalling = () => {
+        const worker = reg.installing;
+        if (!worker) return;
+        const checkState = () => {
+          if (worker.state === 'installed' && navigator.serviceWorker.controller) {
+            showUpdateToast(worker);
+          }
+        };
+        worker.addEventListener('statechange', checkState);
+        checkState();
+      };
+      reg.addEventListener('updatefound', watchInstalling);
+      watchInstalling();
+      if (reg.waiting) showUpdateToast(reg.waiting);
+    } catch (error) {
+      console.error('Service worker registration failed:', error);
+      toast('Offline support could not start. Try refreshing when online.', 'warning');
     }
-
-    // 4. Listen for new workers
-    reg.addEventListener('updatefound', () => {
-      const newWorker = reg.installing;
-      newWorker.addEventListener('statechange', () => {
-        if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-          showUpdateToast(newWorker);
-        }
-      });
-    });
   });
 }
 
 function showUpdateToast(worker) {
-  const toast = document.getElementById('update-toast');
-  const btn = document.getElementById('update-btn');
-  
-  toast.classList.add('show');
-  
-  btn.addEventListener('click', () => {
-    worker.postMessage({ type: 'SKIP_WAITING' });
-    btn.disabled = true;
-    btn.textContent = "Updating...";
-  });
+  if (worker) pendingUpdateWorker = worker;
+  const updateToast = $('update-toast');
+  const btn = $('update-btn');
+  updateToast.classList.add('show');
+  btn.disabled = false;
+  btn.textContent = 'Refresh';
+  btn.onclick = () => {
+    if (isSavePending || hasUnsavedChanges()) {
+      toast('Save or cancel your edits before refreshing.', 'warning');
+      return;
+    }
+    if (updateReadyToReload) {
+      reloadForUpdate();
+    } else if (pendingUpdateWorker) {
+      btn.disabled = true;
+      btn.textContent = 'Updating...';
+      pendingUpdateWorker.postMessage({ type: 'SKIP_WAITING' });
+    }
+  };
 }
 
 async function init() {

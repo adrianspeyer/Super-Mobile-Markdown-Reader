@@ -2,7 +2,7 @@
 
 A beautiful, offline-first Markdown reader and editor built for iPhone and iPad. Reading-first (70%), editing when you need it (30%).
 
-**[Live Demo →](#)** · Built with [Speyer UI v3.3.1](https://github.com/adrianspeyer/speyer-ui)
+**[Live Demo →](#)** · Built with [Speyer UI v3.5.3](https://github.com/adrianspeyer/speyer-ui)
 
 ---
 
@@ -46,12 +46,12 @@ Open `localhost:8000` in Safari → Add to Home Screen.
 The core app is a few files. Put them on any static host:
 
 ```
-index.html          ← The entire app (single file, ~88KB)
+index.html          ← App markup, styles and application logic
 sw.js               ← Service worker for offline
 netlify.toml        ← Security headers (Netlify only)
 manifest.json       ← PWA manifest
-src/                ← Speyer Tour (JS + CSS)
-icons/              ← App icons (192, 512, apple-touch-icon, favicon)
+src/                ← Markdown source mapping and Speyer Tour (JS + CSS)
+icon-*.png          ← App icons (also apple-touch-icon and favicon files)
 ```
 
 ---
@@ -87,7 +87,9 @@ If you select text first, the pair wraps around your selection.
 
 ### Section Editing
 
-From the Table of Contents panel, each heading has a pencil icon. Tapping it opens a bottom sheet with just that section's raw Markdown. Edit, save, and you're back to reading — the section is spliced back into the full document automatically. No need to scroll through the whole file.
+From the Table of Contents panel, supported Markdown headings have a pencil icon. Tapping it opens a bottom sheet with just that section's raw Markdown. Edit, save, and you're back to reading — the section is spliced back into the full document automatically. No need to scroll through the whole file.
+
+Section editing supports top-level Markdown headings, including underline-style headings. Headings inside lists, blockquotes, or raw HTML remain in the table of contents; use the full editor to change those containers. Code-block headings are excluded. Closing a changed section asks before discarding it, and overlapping saves are prevented.
 
 ### Find in Document
 
@@ -111,7 +113,7 @@ Press Enter to advance, Shift+Enter to go back, Escape to close. The find bar sh
 
 ## Design System
 
-Built on [Speyer UI (SUI) v3.3.1](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
+Built on [Speyer UI (SUI) v3.5.3](https://github.com/adrianspeyer/speyer-ui) — a lightweight, accessible CSS design system. The app uses SUI components throughout:
 
 | SUI Component | Usage |
 |---|---|
@@ -167,6 +169,8 @@ Size classes: `.icon` (18px), `.icon-sm` (14px), `.icon-lg` (24px), `.icon-xl` (
 - **localStorage** for reader settings (font size, width, font family, theme)
 - No external database, no sync, no cloud
 
+Metadata changes use IndexedDB transactions and never overwrite document content from a stale tab. Content saves check the version originally opened; if another tab changed or removed that document, the draft stays in the editor with an explanatory message. Copy the draft before reopening the latest version.
+
 ### Document Schema
 
 ```javascript
@@ -213,7 +217,14 @@ Note: `lastOpenedAt` is set to `null` when a document is removed from Recent. Do
 | Speyer Tour v3.0.1 | local | ~28KB (JS) + ~18KB (CSS) | Onboarding product tour |
 | Newsreader font | Google Fonts | ~25KB | Reading typography |
 
-Zero npm dependencies. Zero build tools.
+Zero runtime npm dependencies. Zero build tools. The optional regression suite uses the same pinned Marked version as a development dependency:
+
+```bash
+npm ci
+npm test
+```
+
+Tests cover storage conflicts and aborted writes, duplicate section saves, Markdown source mapping, keyboard delimiters, attribute escaping, service-worker updates, offline paths, and dependency/configuration parity. The app itself can still be served directly without running npm.
 
 ---
 
@@ -261,11 +272,12 @@ This app is specifically designed around iOS PWA limitations:
 ## File Structure
 
 ```
-├── index.html              ← Complete app (HTML + CSS + JS, single file)
+├── index.html              ← App HTML, CSS and application logic
 ├── sw.js                   ← Service worker
 ├── netlify.toml            ← CSP + security headers (v6.2)
 ├── manifest.json           ← PWA manifest
 ├── src/
+│   ├── markdown.js         ← Parser-backed source mapping and heading slugs
 │   ├── speyer-tour.js      ← Onboarding tour (v3.0.1)
 │   └── speyer-tour.css     ← Tour styles
 ├── icons.svg               ← SVG sprite sheet (standalone reference copy)
@@ -308,6 +320,18 @@ These are intentionally out of scope but are natural next-version features:
 ---
 
 ## Changelog
+
+### v6.2.5 — 2026-11-16 — Data Integrity, Offline and Accessibility Fixes
+
+- Upgraded Speyer UI to 3.5.3 in the app and offline precache.
+- Replaced whole-record metadata writes with transactional updates; conflicting content saves retain the unsaved draft.
+- Guarded overlapping saves and retained drafts after storage failures; imports close only after persistence succeeds.
+- Aligned section editing with Marked's heading tokens, preserved source boundaries and line endings, and added discard protection.
+- Added usable heading anchors, keyboard-accessible document/TOC buttons, and correct closing-bracket behavior.
+- Corrected project-relative PWA launch/precache paths, offline fallback, origin matching, and cache isolation across deployments.
+- Prevented initial service-worker activation from reloading the page and deferred updates while drafts or saves are pending.
+- Allowed HTTPS Markdown images under the Netlify CSP and escaped quoted document titles in HTML attributes.
+- Added an optional automated regression suite. App version and service-worker cache version are 6.2.5; the existing onboarding preference is preserved.
 
 ### v6.2.1 — 2026-02-24 — Security Hardening + Onboarding Tour
 

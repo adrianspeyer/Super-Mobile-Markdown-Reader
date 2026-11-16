@@ -1,0 +1,11 @@
+{
+  "name": "super-markdown-mobile-reader",
+  "version": "6.2.5",
+  "private": true,
+  "scripts": {
+    "test": "node --test tests/*.test.cjs"
+  },
+  "devDependencies": {
+    "marked": "15.0.7"
+  }
+}
